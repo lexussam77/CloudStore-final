@@ -1019,7 +1019,7 @@ export default function FilesScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Spinner overlay when uploading */}
       {uploading && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.overlay }}>
@@ -1054,7 +1054,7 @@ export default function FilesScreen() {
           </Animated.View>
         </View>
       )}
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+
         {/* Breadcrumb Navigation */}
         <View style={styles.breadcrumbWrap}>
           {getBreadcrumbs(folderPath).map((crumb, idx, arr) => (
@@ -1583,8 +1583,7 @@ export default function FilesScreen() {
             </View>
           </TouchableWithoutFeedback>
         </Modal>
-      </SafeAreaView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -1614,17 +1613,15 @@ const styles = StyleSheet.create({
   searchBarWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f6f6f6',
-    borderRadius: 18,
+    borderRadius: 20,
     marginHorizontal: 18,
-    marginBottom: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    marginBottom: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
   },
   searchIcon: {
     marginRight: 8,
@@ -1633,10 +1630,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
     borderRadius: 16,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    fontSize: 17,
-    color: '#222',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    fontSize: 16,
     fontWeight: '500',
     fontFamily: 'System',
   },
@@ -1666,16 +1662,14 @@ const styles = StyleSheet.create({
   fileCardRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#faf9f7',
-    borderRadius: 16,
+    borderRadius: 18,
     marginHorizontal: 18,
-    marginBottom: 14,
-    padding: 16,
-    shadowColor: '#003366',
-    shadowOpacity: 0.22,
-    shadowRadius: 15,
+    marginBottom: 16,
+    padding: 18,
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    elevation: 4,
   },
   fileThumbWrap: {
     width: 48,
@@ -1730,15 +1724,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   createFolderModal: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 28,
-    minWidth: 260,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
+    borderRadius: 24,
+    padding: 32,
+    minWidth: 280,
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
     alignItems: 'stretch',
   },
   createFolderTitle: {
@@ -1765,17 +1757,15 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   categoryButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 22,
-    borderRadius: 22,
-    marginRight: 12,
-    backgroundColor: '#fff',
-    shadowColor: '#0061FF',
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 24,
+    marginRight: 14,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
     elevation: 2,
-    minWidth: 64,
+    minWidth: 70,
     alignItems: 'center',
     justifyContent: 'center',
   },

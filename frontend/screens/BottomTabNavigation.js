@@ -104,11 +104,15 @@ export default function BottomTabNavigation({ navigation }) {
                   <Feather
                     name={tab.icon}
                     size={24}
-                    color={isActive ? theme.primary : theme.textSecondary}
+                    color={isActive ? theme.primary : (theme.isDark ? '#ffffff' : theme.textSecondary)}
                     style={isActive ? styles.activeTabIcon : styles.tabIcon}
                   />
                 </Animated.View>
-                <Text style={[styles.tabLabel, { color: theme.textSecondary }, isActive && { color: theme.primary }]}> 
+                <Text style={[
+                  styles.tabLabel, 
+                  { color: isActive ? theme.primary : (theme.isDark ? '#ffffff' : theme.textSecondary) },
+                  tab.key === 'Compression' && styles.compressionTabLabel
+                ]}> 
                   {tab.key === 'Compression' ? 'Compress' : tab.label}
                 </Text>
               </TouchableOpacity>
@@ -156,6 +160,10 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     alignItems: 'center',
     justifyContent: 'space-between',
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: -6 },
+    elevation: 3,
   },
   tabButton: {
     flex: 1,
@@ -181,8 +189,8 @@ const styles = StyleSheet.create({
   },
   compressionTabLabel: {
     fontWeight: 'bold',
-    fontSize: 15,
-    marginTop: 16,
+    fontSize: 12,
+    marginTop: 4,
     textAlign: 'center',
   },
   compressionTabButton: {

@@ -222,12 +222,7 @@ export async function renameFolder(token, folderId, newName) {
   });
 }
 
-// --- NOTIFICATIONS ---
-export async function listNotifications(token) {
-  return robustFetch(`${API_BASE_URL}/notifications`, {
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
-}
+
 
 // --- LOGOUT (if implemented on backend) ---
 export async function logout(token) {
@@ -248,3 +243,4 @@ export async function logout(token) {
 // const token = googleRes.token;
 // const user = await getCurrentUser(token);
 // End of example usage
+

@@ -104,7 +104,7 @@ export default function AccountScreen({ navigation }) {
       </View>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Profile Card */}
-        <Animated.View style={[styles.profileCard, { backgroundColor: theme.card, shadowColor: theme.shadow }, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}> 
+        <Animated.View style={[styles.profileCard, { backgroundColor: theme.card, shadowColor: theme.shadow, shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 4 }, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}>
               <TouchableOpacity onPress={pickImage} activeOpacity={0.8} style={styles.avatarCircleImgWrap}>
                 {avatarUri ? (
                   <Image source={{ uri: avatarUri }} style={styles.avatarCircleImg} />
@@ -121,7 +121,7 @@ export default function AccountScreen({ navigation }) {
                 <Text style={[styles.email, { color: theme.textSecondary }]}>{user.email}</Text>
         </Animated.View>
         {/* Plan and Storage Card */}
-        <Animated.View style={[styles.singleCard, { backgroundColor: theme.card, shadowColor: theme.shadow }, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}> 
+        <Animated.View style={[styles.singleCard, { backgroundColor: theme.card, shadowColor: theme.shadow, shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 4 }, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}>
           <View style={styles.planRow}>
             <Feather name="award" size={22} color={theme.primary} style={styles.planIcon} />
             <Text style={[styles.planBadge, { color: theme.primary, backgroundColor: theme.primaryLight }]}>{user.plan}</Text>
@@ -270,14 +270,14 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     alignItems: 'center',
-    borderRadius: 18,
+    borderRadius: 20,
     marginHorizontal: 16,
-    marginBottom: 18,
-    padding: 18,
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    marginBottom: 20,
+    padding: 20,
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
   },
   avatarCircleImgWrap: {
     position: 'relative',
@@ -308,14 +308,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   singleCard: {
-    borderRadius: 18,
+    borderRadius: 20,
     marginHorizontal: 16,
-    marginBottom: 18,
-    padding: 20,
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    marginBottom: 20,
+    padding: 24,
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
     alignItems: 'center',
   },
   planRow: {
@@ -392,14 +392,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   sectionCard: {
-    borderRadius: 18,
+    borderRadius: 20,
     marginHorizontal: 16,
-    marginBottom: 18,
-    padding: 16,
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    marginBottom: 20,
+    padding: 20,
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
   },
   sectionTitle: {
     fontSize: 17,
@@ -422,14 +422,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 14,
+    borderRadius: 16,
     marginHorizontal: 16,
-    marginTop: 18,
-    paddingVertical: 14,
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    marginTop: 20,
+    paddingVertical: 16,
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
   },
   logoutText: {
     fontWeight: 'bold',
