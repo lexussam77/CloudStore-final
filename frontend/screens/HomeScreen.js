@@ -166,8 +166,8 @@ export default function HomeScreen() {
   };
 
   const handleFilePress = (file) => {
-    // Navigate to Files screen or show file details
-    navigation.navigate('Files');
+    // Navigate to file viewer screen
+    navigation.navigate('FileViewer', { file });
   };
 
   const handleCreateFolder = async () => {

@@ -141,7 +141,9 @@ export default function FilesScreen() {
 
     try {
     if (type === 'file') {
-        if (action === 'rename') {
+        if (action === 'open') {
+          handleFilePress(item);
+        } else if (action === 'rename') {
           setRenameItem(item);
           setNewName(item.name);
           setShowRenameModal(true);
@@ -974,6 +976,11 @@ export default function FilesScreen() {
     refreshFiles();
   };
 
+  const handleFilePress = (file) => {
+    // Navigate to file viewer screen
+    navigation.navigate('FileViewer', { file });
+  };
+
   return (
     <View style={{ flex: 1 }}>
       {/* Spinner overlay when uploading */}
@@ -1160,7 +1167,7 @@ export default function FilesScreen() {
               <FileItem
                 key={item.id || idx}
                 item={item}
-                onPress={() => {}}
+                onPress={() => handleFilePress(item)}
                 onMenuPress={() => handleMenuPress(item, 'file')}
                 onStarPress={() => handleStarPress(item)}
               />
@@ -1178,6 +1185,10 @@ export default function FilesScreen() {
             <View style={styles.centeredMenuCard}>
             {menuType === 'file' ? (
               <>
+                  <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('open', selectedItem, 'file')}>
+                    <Feather name="eye" size={24} color="#0061FF" />
+                    <Text style={styles.centeredMenuText}>Open</Text>
+                </TouchableOpacity>
                   <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('rename', selectedItem, 'file')}>
                     <Feather name="edit-3" size={24} color="#0061FF" />
                     <Text style={styles.centeredMenuText}>Rename</Text>
