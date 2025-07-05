@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Animated } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
+import { useTheme } from '../theme/ThemeContext';
 
 function getFileIcon(name) {
   if (!name) return 'file-text';
@@ -16,6 +17,7 @@ function getFileIcon(name) {
 }
 
 export default function FileItem({ item, onMenuPress, onPress, onStarPress }) {
+  const { theme } = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const starScaleAnim = useRef(new Animated.Value(1)).current;
   
@@ -49,18 +51,18 @@ export default function FileItem({ item, onMenuPress, onPress, onStarPress }) {
   const isFavorited = item.favourite || item.favorites;
   
   return (
-    <Animated.View style={[styles.fileCardRow, { opacity: fadeAnim }]}> 
-      <TouchableOpacity style={styles.fileCardRow} onPress={onPress} activeOpacity={0.8}>
-        <View style={styles.fileThumbWrap}>
+    <Animated.View style={[styles.fileCardRow, { backgroundColor: theme.card, shadowColor: theme.shadow }, { opacity: fadeAnim }]}> 
+      <TouchableOpacity style={[styles.fileCardRow, { backgroundColor: theme.card }]} onPress={onPress} activeOpacity={0.8}>
+        <View style={[styles.fileThumbWrap, { backgroundColor: theme.secondaryLight }]}>
           {isImage && item.url ? (
             <Image source={{ uri: item.url }} style={styles.fileThumbImg} />
           ) : (
-            <Feather name={getFileIcon(item.name)} size={32} color={'#2563eb'} />
+            <Feather name={getFileIcon(item.name)} size={32} color={theme.primary} />
           )}
         </View>
         <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={styles.fileCardName} numberOfLines={1}>{item.name}</Text>
-          <Text style={styles.fileCardMeta} numberOfLines={1}>{item.modifiedAt ? new Date(item.modifiedAt).toLocaleString() : ''} {item.size ? `• ${item.size}` : ''}</Text>
+          <Text style={[styles.fileCardName, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
+          <Text style={[styles.fileCardMeta, { color: theme.textSecondary }]} numberOfLines={1}>{item.modifiedAt ? new Date(item.modifiedAt).toLocaleString() : ''} {item.size ? `• ${item.size}` : ''}</Text>
         </View>
         <Animated.View style={{ transform: [{ scale: starScaleAnim }] }}>
           <TouchableOpacity 
@@ -71,12 +73,12 @@ export default function FileItem({ item, onMenuPress, onPress, onStarPress }) {
             <Feather 
               name={isFavorited ? "star" : "star"} 
               size={20} 
-              color={isFavorited ? "#fbbf24" : "#ddd"} 
+              color={isFavorited ? "#fbbf24" : theme.textTertiary} 
             />
           </TouchableOpacity>
         </Animated.View>
         <TouchableOpacity style={styles.menuButton} onPress={onMenuPress} activeOpacity={0.7}>
-          <Feather name="more-vertical" size={22} color="#888" />
+          <Feather name="more-vertical" size={22} color={theme.textSecondary} />
         </TouchableOpacity>
       </TouchableOpacity>
     </Animated.View>
@@ -87,12 +89,10 @@ const styles = StyleSheet.create({
   fileCardRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     borderRadius: 12,
     marginHorizontal: 12,
     marginVertical: 4,
     padding: 12,
-    shadowColor: '#000',
     shadowOpacity: 0.03,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
@@ -102,7 +102,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 8,
-    backgroundColor: '#f0f4fa',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -116,11 +115,9 @@ const styles = StyleSheet.create({
   fileCardName: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#222',
   },
   fileCardMeta: {
     fontSize: 13,
-    color: '#888',
     marginTop: 2,
   },
   menuButton: {

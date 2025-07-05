@@ -3,8 +3,10 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, Aler
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL, verifyEmail } from './api';
 import CustomPrompt from './CustomPrompt';
+import { useTheme } from '../theme/ThemeContext';
 
 export default function EmailVerificationScreen({ navigation, route }) {
+  const { theme } = useTheme();
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [email, setEmail] = useState(route?.params?.email || '');
   const inputs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
@@ -91,22 +93,27 @@ export default function EmailVerificationScreen({ navigation, route }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Animated.View style={[styles.card, { opacity: cardAnim, transform: [{ translateY: cardAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}>
-        <Text style={styles.header}>Verify your CloudStore email</Text>
-        <Text style={styles.message}>Enter the 6-digit verification code sent to your email address.</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <Animated.View style={[styles.card, { backgroundColor: theme.card, shadowColor: theme.shadow }, { opacity: cardAnim, transform: [{ translateY: cardAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}>
+        <Text style={[styles.header, { color: theme.primary }]}>Verify your CloudStore email</Text>
+        <Text style={[styles.message, { color: theme.textSecondary }]}>Enter the 6-digit verification code sent to your email address.</Text>
         <View style={styles.codeInputRow}>
           {code.map((digit, idx) => (
             <TextInput
               key={idx}
               ref={inputs[idx]}
-              style={[styles.input, digit && styles.inputFilled, focusedInput === idx && styles.inputFocused]}
+              style={[
+                styles.input, 
+                { backgroundColor: theme.searchBackground, color: theme.searchText, borderColor: theme.border },
+                digit && { borderColor: theme.primary, backgroundColor: theme.primaryLight },
+                focusedInput === idx && { borderColor: theme.primary }
+              ]}
               value={digit}
               onChangeText={text => handleChange(text, idx)}
               keyboardType="number-pad"
               maxLength={1}
-              placeholder="-"
-              placeholderTextColor="#bbb"
+              placeholder=""
+              placeholderTextColor="transparent"
               returnKeyType="next"
               autoFocus={idx === 0}
               onFocus={() => setFocusedInput(idx)}
@@ -114,13 +121,13 @@ export default function EmailVerificationScreen({ navigation, route }) {
             />
           ))}
         </View>
-        <TouchableOpacity style={styles.button} activeOpacity={0.85} onPress={handleVerify} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Verify Email</Text>}
+        <TouchableOpacity style={[styles.button, { backgroundColor: theme.primary }]} activeOpacity={0.85} onPress={handleVerify} disabled={loading}>
+          {loading ? <ActivityIndicator color={theme.textInverse} /> : <Text style={[styles.buttonText, { color: theme.textInverse }]}>Verify Email</Text>}
         </TouchableOpacity>
       </Animated.View>
       {loading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#0061FF" />
+          <ActivityIndicator size="large" color={theme.primary} />
         </View>
       )}
       <CustomPrompt
@@ -136,18 +143,15 @@ export default function EmailVerificationScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 12,
   },
   card: {
-    backgroundColor: '#fff',
     borderRadius: 24,
     padding: 24,
     width: '100%',
     maxWidth: 350,
-    shadowColor: '#0061FF',
     shadowOpacity: 0.08,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -158,14 +162,12 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#0061FF',
     marginBottom: 10,
     textAlign: 'center',
     letterSpacing: 0.1,
   },
   message: {
     fontSize: 16,
-    color: '#888',
     fontWeight: '400',
     marginBottom: 18,
     textAlign: 'center',
@@ -174,53 +176,46 @@ const styles = StyleSheet.create({
   codeInputRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 24,
-    marginTop: 8,
+    marginBottom: 32,
+    marginTop: 16,
+    gap: 12,
   },
   input: {
-    backgroundColor: '#f6f7f9',
     borderRadius: 12,
-    padding: 12,
-    fontSize: 20,
-    color: '#222',
-    marginHorizontal: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 12,
+    fontSize: 24,
     borderWidth: 1.5,
-    borderColor: '#e0e7ef',
     textAlign: 'center',
-    width: 44,
-    height: 48,
+    width: 50,
+    height: 56,
     fontWeight: 'bold',
-    letterSpacing: 2,
+    letterSpacing: 1,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   inputFilled: {
-    borderColor: '#0061FF',
-    backgroundColor: '#e6f0ff',
+    // Colors applied dynamically
   },
   inputFocused: {
-    borderColor: '#0061FF',
-    backgroundColor: '#e6f0ff',
-    shadowColor: '#0061FF',
     shadowOpacity: 0.08,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
   button: {
-    backgroundColor: '#0061FF',
     borderRadius: 16,
     paddingVertical: 14,
     paddingHorizontal: 32,
     width: '100%',
     alignItems: 'center',
     marginTop: 10,
-    shadowColor: '#0061FF',
     shadowOpacity: 0.06,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
   buttonText: {
-    color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
     textAlign: 'center',
@@ -228,7 +223,6 @@ const styles = StyleSheet.create({
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.7)',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { useTheme } from '../theme/ThemeContext';
 
 const plans = [
   {
@@ -42,6 +43,7 @@ const plans = [
 const { width } = Dimensions.get('window');
 
 export default function ManagePlanScreen() {
+  const { theme } = useTheme();
   const [selectedTab, setSelectedTab] = useState(0);
   const flatListRef = useRef();
   const navigation = useNavigation();
@@ -57,21 +59,21 @@ export default function ManagePlanScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backArrow}>{'←'}</Text>
+          <Text style={[styles.backArrow, { color: theme.text }]}>{'←'}</Text>
         </TouchableOpacity>
-        <Text style={styles.header}>Manage Plan</Text>
+        <Text style={[styles.header, { color: theme.text }]}>Upgrade Plan</Text>
       </View>
       <View style={styles.tabsRow}>
         {plans.map((plan, idx) => (
           <TouchableOpacity
             key={plan.key}
-            style={[styles.tab, selectedTab === idx && styles.tabSelected]}
+            style={[styles.tab, { borderBottomColor: 'transparent' }, selectedTab === idx && [styles.tabSelected, { borderBottomColor: theme.primary }]]}
             onPress={() => handleTabPress(idx)}
           >
-            <Text style={[styles.tabText, selectedTab === idx && styles.tabTextSelected]}>{plan.name}</Text>
+            <Text style={[styles.tabText, { color: theme.textSecondary }, selectedTab === idx && [styles.tabTextSelected, { color: theme.primary }]]}>{plan.name}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -86,29 +88,29 @@ export default function ManagePlanScreen() {
         keyExtractor={item => item.key}
         contentContainerStyle={styles.cardsScroll}
         renderItem={({ item }) => (
-          <Animated.View entering={FadeIn.duration(400)} style={[styles.card, { width: width * 0.85 }]}> 
-            <Text style={styles.planName}>{item.name}</Text>
-            <Text style={styles.planPrice}>{item.storage}, {item.price}</Text>
+          <Animated.View entering={FadeIn.duration(400)} style={[styles.card, { backgroundColor: theme.card, shadowColor: theme.shadow, width: width * 0.85 }]}> 
+            <Text style={[styles.planName, { color: theme.text }]}>{item.name}</Text>
+            <Text style={[styles.planPrice, { color: theme.text }]}>{item.storage}, {item.price}</Text>
             <View style={styles.featuresList}>
               {item.features.map((f, idx) => (
                 <View key={idx} style={styles.featureRow}>
-                  <Text style={styles.check}>✔</Text>
-                  <Text style={styles.featureText}>{f}</Text>
+                  <Text style={[styles.check, { color: '#009900' }]}>✔</Text>
+                  <Text style={[styles.featureText, { color: theme.text }]}>{f}</Text>
                 </View>
               ))}
             </View>
             <TouchableOpacity style={styles.reminderRow}>
-              <Text style={styles.bell}>🔔</Text>
-              <Text style={styles.reminderText}>Get a reminder before your trial ends</Text>
+              <Text style={[styles.bell, { color: theme.primary }]}>🔔</Text>
+              <Text style={[styles.reminderText, { color: theme.primary }]}>Get a reminder before your trial ends</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.ctaButton} onPress={() => navigation.navigate('CreditCard', { plan: item })}>
-              <Text style={styles.ctaButtonText}>Try free for 30 days</Text>
+            <TouchableOpacity style={[styles.ctaButton, { backgroundColor: theme.primary, shadowColor: theme.shadow }]} onPress={() => navigation.navigate('CreditCard', { plan: item })}>
+              <Text style={[styles.ctaButtonText, { color: theme.textInverse }]}>Try free for 30 days</Text>
             </TouchableOpacity>
           </Animated.View>
         )}
       />
-      <TouchableOpacity style={styles.freePlanButton} onPress={() => navigation.goBack()}>
-        <Text style={styles.freePlanText}>Continue with Free Plan</Text>
+      <TouchableOpacity style={[styles.freePlanButton, { backgroundColor: theme.secondary, borderColor: theme.border }]} onPress={() => navigation.goBack()}>
+        <Text style={[styles.freePlanText, { color: theme.primary }]}>Continue with Free Plan</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -117,24 +119,26 @@ export default function ManagePlanScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 18,
     marginTop: 10,
-    marginBottom: 8,
+    marginBottom: 16,
+    paddingVertical: 8,
   },
   backArrow: {
-    fontSize: 26,
-    color: '#222',
-    marginRight: 12,
+    fontSize: 28,
+    marginRight: 16,
+    fontWeight: 'bold',
   },
   header: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#222',
+    flex: 1,
+    textAlign: 'center',
+    marginRight: 44, // Compensate for back arrow width to center the title
   },
   tabsRow: {
     flexDirection: 'row',
@@ -146,7 +150,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 18,
     borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
     marginHorizontal: 6,
   },
   tabSelected: {
@@ -154,7 +157,6 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 16,
-    color: '#888',
     fontWeight: 'bold',
   },
   tabTextSelected: {
@@ -163,15 +165,13 @@ const styles = StyleSheet.create({
   cardsScroll: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 32,
-    minHeight: 340,
+    paddingVertical: 24,
+    minHeight: 300,
   },
   card: {
-    backgroundColor: '#fff',
     borderRadius: 22,
     marginHorizontal: 10,
-    padding: 28,
-    shadowColor: '#0061FF',
+    padding: 22,
     shadowOpacity: 0.06,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -181,18 +181,16 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   planName: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#222',
     marginBottom: 4,
   },
   planPrice: {
-    fontSize: 16,
-    color: '#222',
-    marginBottom: 16,
+    fontSize: 15,
+    marginBottom: 14,
   },
   featuresList: {
-    marginBottom: 18,
+    marginBottom: 14,
     width: '100%',
   },
   featureRow: {
@@ -201,13 +199,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   check: {
-    color: '#009900',
     fontSize: 16,
     marginRight: 8,
   },
   featureText: {
     fontSize: 15,
-    color: '#222',
   },
   reminderRow: {
     flexDirection: 'row',
@@ -216,37 +212,31 @@ const styles = StyleSheet.create({
   },
   bell: {
     fontSize: 18,
-    color: '#2563eb',
     marginRight: 6,
   },
   reminderText: {
-    color: '#2563eb',
     fontSize: 15,
     fontWeight: '500',
   },
   ctaButton: {
-    backgroundColor: '#0061FF',
     borderRadius: 16,
     paddingVertical: 14,
     paddingHorizontal: 32,
     marginTop: 10,
     alignItems: 'center',
     width: '100%',
-    shadowColor: '#0061FF',
     shadowOpacity: 0.06,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
   ctaButtonText: {
-    color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
     textAlign: 'center',
     letterSpacing: 0.1,
   },
   freePlanButton: {
-    backgroundColor: '#f5f5f5',
     borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 20,
@@ -255,9 +245,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 18,
     width: '80%',
+    borderWidth: 1,
   },
   freePlanText: {
-    color: '#2563eb',
     fontWeight: 'bold',
     fontSize: 16,
   },

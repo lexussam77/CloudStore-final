@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SectionList, Alert, ScrollView, Image, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SectionList, Alert, ScrollView, Image, Modal, Switch } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import TermsSVG from '../assets/images/undraw_terms_sx63.svg';
 import FeedbackSVG from '../assets/images/undraw_feedback_ebmx.svg';
 import CustomPrompt from './CustomPrompt';
+import { useTheme } from '../theme/ThemeContext';
 
 const accountSettings = [
   { icon: 'file-text', label: 'Terms of service', nav: 'TermsOfService' },
@@ -30,6 +31,7 @@ const sections = [
 ];
 
 export default function SettingsScreen({ navigation }) {
+  const { theme, isDarkMode, toggleTheme } = useTheme();
   const [promptVisible, setPromptVisible] = useState(false);
   const [promptMessage, setPromptMessage] = useState('');
   const [promptSuccess, setPromptSuccess] = useState(true);
@@ -37,39 +39,39 @@ export default function SettingsScreen({ navigation }) {
   const [confirmAction, setConfirmAction] = useState('');
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Image source={{ uri: 'https://images.unsplash.com/photo-1465101178521-c1a9136a3b99?auto=format&fit=crop&w=800&q=80' }} style={styles.headerImage} resizeMode="cover" />
         <View style={styles.settingsInfoSection}>
-          <Text style={styles.settingsCaption}>Settings & Preferences</Text>
-          <Text style={styles.settingsDescription}>Customize your CloudStore experience, manage your privacy, and keep your app running smoothly.</Text>
+          <Text style={[styles.settingsCaption, { color: theme.primary }]}>Settings & Preferences</Text>
+          <Text style={[styles.settingsDescription, { color: theme.textSecondary }]}>Customize your CloudStore experience with dark mode by default, manage your privacy, and keep your app running smoothly.</Text>
         </View>
         <View style={styles.illustrationWrap}>
           <TermsSVG width={120} height={90} />
         </View>
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionHeaderText}>Your account</Text>
+        <View style={[styles.sectionCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
+          <Text style={[styles.sectionHeaderText, { color: theme.textSecondary }]}>Your account</Text>
           {accountSettings.map((item, idx) => (
             <TouchableOpacity
               key={idx}
-              style={styles.row}
+              style={[styles.row, { backgroundColor: theme.card, borderColor: theme.border }]}
               activeOpacity={0.85}
               onPress={() => {
                 if (item.nav) navigation.navigate(item.nav);
                 else if (item.label.includes('App version')) Alert.alert('CloudStore App Version', '428.2.2');
               }}
             >
-              <Feather name={item.icon} size={22} color={'#0061FF'} style={styles.icon} />
-              <Text style={styles.text}>{item.label}</Text>
+              <Feather name={item.icon} size={22} color={theme.primary} style={styles.icon} />
+              <Text style={[styles.text, { color: theme.text }]}>{item.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionHeaderText}>App</Text>
+        <View style={[styles.sectionCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
+          <Text style={[styles.sectionHeaderText, { color: theme.textSecondary }]}>App</Text>
           {appSettings.map((item, idx) => (
         <TouchableOpacity
               key={idx}
-          style={styles.row}
+          style={[styles.row, { backgroundColor: theme.card, borderColor: theme.border }]}
           activeOpacity={0.85}
           onPress={() => {
             if (item.nav) navigation.navigate(item.nav);
@@ -90,29 +92,45 @@ export default function SettingsScreen({ navigation }) {
             }
           }}
         >
-              <Feather name={item.icon} size={22} color={'#888'} style={styles.icon} />
-              <Text style={styles.text}>{item.label}</Text>
+              <Feather name={item.icon} size={22} color={theme.textSecondary} style={styles.icon} />
+              <Text style={[styles.text, { color: theme.text }]}>{item.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
-        <View style={[styles.sectionCard, { borderColor: 'crimson', borderWidth: 1 }] }>
-          <Text style={[styles.sectionHeaderText, { color: 'crimson' }]}>Danger Zone</Text>
+        
+        {/* Theme Toggle */}
+        <View style={[styles.sectionCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
+          <Text style={[styles.sectionHeaderText, { color: theme.textSecondary }]}>Appearance</Text>
+          <View style={[styles.row, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Feather name="moon" size={22} color={theme.primary} style={styles.icon} />
+            <Text style={[styles.text, { color: theme.text }]}>Dark Mode (Recommended)</Text>
+            <Switch
+              value={isDarkMode}
+              onValueChange={toggleTheme}
+              trackColor={{ false: theme.border, true: theme.primaryLight }}
+              thumbColor={isDarkMode ? theme.primary : theme.textTertiary}
+              style={{ marginLeft: 'auto' }}
+            />
+          </View>
+          <Text style={[styles.themeDescription, { color: theme.textSecondary }]}>
+            Dark mode is the default theme for better eye comfort and modern aesthetics
+          </Text>
+        </View>
+        <View style={[styles.sectionCard, { backgroundColor: theme.card, shadowColor: theme.shadow, borderColor: theme.error, borderWidth: 1 }] }>
+          <Text style={[styles.sectionHeaderText, { color: theme.error }]}>Danger Zone</Text>
           {dangerZone.map((item, idx) => (
             <TouchableOpacity
               key={idx}
-              style={styles.row}
+              style={[styles.row, { backgroundColor: theme.card, borderColor: theme.border }]}
               activeOpacity={0.85}
               onPress={() => {
                 if (item.nav) navigation.navigate(item.nav);
               }}
             >
-              <Feather name={item.icon} size={22} color={'crimson'} style={styles.icon} />
-              <Text style={[styles.text, { color: 'crimson' }]}>{item.label}</Text>
+              <Feather name={item.icon} size={22} color={theme.error} style={styles.icon} />
+              <Text style={[styles.text, { color: theme.error }]}>{item.label}</Text>
         </TouchableOpacity>
           ))}
-        </View>
-        <View style={styles.dangerIllustrationWrap}>
-          <FeedbackSVG width={100} height={70} />
         </View>
       </ScrollView>
       <CustomPrompt
@@ -128,14 +146,14 @@ export default function SettingsScreen({ navigation }) {
         animationType="fade"
         onRequestClose={() => setConfirmVisible(false)}
       >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.18)', justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 28, alignItems: 'center', width: 300 }}>
-            <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#0061FF', marginBottom: 18, textAlign: 'center' }}>
+        <View style={{ flex: 1, backgroundColor: theme.overlay, justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: theme.card, borderRadius: 18, padding: 28, alignItems: 'center', width: 300 }}>
+            <Text style={{ fontSize: 17, fontWeight: 'bold', color: theme.primary, marginBottom: 18, textAlign: 'center' }}>
               {confirmAction === 'cache' ? 'Are you sure you want to clear cache?' : 'Are you sure you want to clear search history?'}
             </Text>
             <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 8 }}>
               <TouchableOpacity
-                style={{ backgroundColor: '#0061FF', borderRadius: 14, paddingVertical: 10, paddingHorizontal: 28, marginRight: 12 }}
+                style={{ backgroundColor: theme.primary, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 28, marginRight: 12 }}
                 onPress={() => {
                   setConfirmVisible(false);
                   setTimeout(() => {
@@ -146,14 +164,14 @@ export default function SettingsScreen({ navigation }) {
                 }}
                 activeOpacity={0.85}
               >
-                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Yes</Text>
+                <Text style={{ color: theme.textInverse, fontWeight: 'bold', fontSize: 16 }}>Yes</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={{ backgroundColor: '#eee', borderRadius: 14, paddingVertical: 10, paddingHorizontal: 28 }}
+                style={{ backgroundColor: theme.secondary, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 28 }}
                 onPress={() => setConfirmVisible(false)}
                 activeOpacity={0.85}
               >
-                <Text style={{ color: '#0061FF', fontWeight: 'bold', fontSize: 16 }}>No</Text>
+                <Text style={{ color: theme.primary, fontWeight: 'bold', fontSize: 16 }}>No</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -166,17 +184,14 @@ export default function SettingsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f6f8fc',
     paddingTop: 10,
     paddingHorizontal: 0,
   },
   sectionCard: {
-    backgroundColor: '#fff',
     borderRadius: 24,
     marginHorizontal: 16,
     marginBottom: 18,
     padding: 20,
-    shadowColor: '#003366',
     shadowOpacity: 0.22,
     shadowRadius: 15,
     shadowOffset: { width: 0, height: 8 },
@@ -184,7 +199,6 @@ const styles = StyleSheet.create({
   },
   sectionHeaderText: {
     fontSize: 16,
-    color: '#888',
     fontWeight: 'bold',
     fontFamily: 'System',
     marginBottom: 8,
@@ -194,8 +208,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderColor: '#eee',
-    backgroundColor: '#fff',
     borderRadius: 18,
     marginBottom: 10,
     paddingHorizontal: 10,
@@ -207,7 +219,6 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 16,
-    color: '#222',
     fontWeight: 'bold',
     fontFamily: 'System',
   },
@@ -244,14 +255,18 @@ const styles = StyleSheet.create({
   settingsCaption: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#0061FF',
     marginBottom: 6,
     textAlign: 'center',
   },
   settingsDescription: {
     fontSize: 15,
-    color: '#444',
     textAlign: 'center',
     marginBottom: 2,
+  },
+  themeDescription: {
+    fontSize: 13,
+    marginTop: 8,
+    marginLeft: 36,
+    fontStyle: 'italic',
   },
 }); 

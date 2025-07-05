@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, Dimensions, 
 import * as DocumentPicker from 'expo-document-picker';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '../theme/ThemeContext';
 
 const PHOTO_SIZE = (Dimensions.get('window').width - 64) / 3;
 const photos = [
@@ -18,6 +19,7 @@ const photos = [
 ];
 
 export default function PhotosScreen() {
+  const { theme } = useTheme();
   const navigation = useNavigation();
 
   const pickAndUploadFile = async () => {
@@ -38,13 +40,13 @@ export default function PhotosScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f6f6f2' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <FlatList
         data={[]}
         ListHeaderComponent={
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Photos</Text>
-            <Text style={styles.cardSubtitle}>Today</Text>
+          <View style={[styles.card, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
+            <Text style={[styles.cardTitle, { color: theme.text }]}>Photos</Text>
+            <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>Today</Text>
             <FlatList
               data={photos}
               keyExtractor={item => item.id}
@@ -59,18 +61,18 @@ export default function PhotosScreen() {
         }
         ListFooterComponent={
           <>
-            <Text style={styles.title}>Photos</Text>
-            <Text style={styles.subtitle}>Come here to view and edit photos and videos, and manage camera uploads.</Text>
-            <TouchableOpacity style={styles.primaryBtn} activeOpacity={0.85} onPress={() => navigation.navigate('BackupLoading')}>
-              <Text style={styles.primaryBtnText}>Back up photos</Text>
+            <Text style={[styles.title, { color: theme.text }]}>Photos</Text>
+            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Come here to view and edit photos and videos, and manage camera uploads.</Text>
+            <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: theme.primary }]} activeOpacity={0.85} onPress={() => navigation.navigate('BackupLoading')}>
+              <Text style={[styles.primaryBtnText, { color: theme.textInverse }]}>Back up photos</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryBtn} activeOpacity={0.85} onPress={pickAndUploadFile}>
-              <Text style={styles.secondaryBtnText}>Upload photos</Text>
+            <TouchableOpacity style={[styles.secondaryBtn, { backgroundColor: theme.card, borderColor: theme.border }]} activeOpacity={0.85} onPress={pickAndUploadFile}>
+              <Text style={[styles.secondaryBtnText, { color: theme.text }]}>Upload photos</Text>
               </TouchableOpacity>
           </>
         }
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { backgroundColor: theme.background }]}
       />
     </SafeAreaView>
   );
@@ -80,18 +82,15 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 0,
     alignItems: 'stretch',
-    backgroundColor: '#f6f6f2',
     paddingBottom: 10,
     minHeight: undefined,
   },
   card: {
     width: '100%',
-    backgroundColor: '#fff',
     borderRadius: 18,
     marginTop: 10,
     marginBottom: 10,
     alignItems: 'center',
-    shadowColor: '#000',
     shadowOpacity: 0.08,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
@@ -102,14 +101,12 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#222',
     alignSelf: 'flex-start',
     marginLeft: 16,
     marginBottom: 2,
   },
   cardSubtitle: {
     fontSize: 16,
-    color: '#444',
     alignSelf: 'flex-start',
     marginLeft: 16,
     marginBottom: 6,
@@ -124,26 +121,22 @@ const styles = StyleSheet.create({
     height: PHOTO_SIZE,
     borderRadius: 8,
     margin: 4,
-    backgroundColor: '#eee',
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#222',
     marginBottom: 4,
     alignSelf: 'flex-start',
     marginLeft: 16,
   },
   subtitle: {
     fontSize: 16,
-    color: '#888',
     marginBottom: 10,
     alignSelf: 'flex-start',
     marginLeft: 16,
     marginRight: 16,
   },
   primaryBtn: {
-    backgroundColor: '#0061FF',
     borderRadius: 24,
     paddingVertical: 18,
     paddingHorizontal: 24,
@@ -153,24 +146,20 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   primaryBtnText: {
-    color: '#fff',
     fontWeight: 'bold',
     fontSize: 18,
   },
   secondaryBtn: {
-    backgroundColor: '#fff',
     borderRadius: 24,
     paddingVertical: 18,
     paddingHorizontal: 24,
     alignItems: 'center',
     width: '80%',
     borderWidth: 1.5,
-    borderColor: '#e0e0e0',
     marginBottom: 8,
     alignSelf: 'center',
   },
   secondaryBtnText: {
-    color: '#222',
     fontWeight: 'bold',
     fontSize: 18,
   },

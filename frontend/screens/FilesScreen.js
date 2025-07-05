@@ -13,6 +13,7 @@ import FolderItem from './FolderItem';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as MediaLibrary from 'expo-media-library';
+import { useTheme } from '../theme/ThemeContext';
 
 const folders = [];
 const categories = [
@@ -56,16 +57,21 @@ const getBreadcrumbs = (folderPath) => {
 
 // Skeleton Loader Component
 function SkeletonLoader({ type = 'file' }) {
+  const { theme } = useTheme();
   return (
-    <View style={type === 'file' ? styles.skeletonFile : styles.skeletonFolder}>
-      <View style={styles.skeletonIcon} />
-      <View style={styles.skeletonTextBlock} />
-      {type === 'file' && <View style={styles.skeletonTextBlockSmall} />}
+    <View style={[
+      type === 'file' ? styles.skeletonFile : styles.skeletonFolder,
+      { backgroundColor: theme.secondaryLight }
+    ]}>
+      <View style={[styles.skeletonIcon, { backgroundColor: theme.secondaryDark }]} />
+      <View style={[styles.skeletonTextBlock, { backgroundColor: theme.secondaryDark }]} />
+      {type === 'file' && <View style={[styles.skeletonTextBlockSmall, { backgroundColor: theme.secondaryDark }]} />}
     </View>
   );
 }
 
 export default function FilesScreen() {
+  const { theme } = useTheme();
   const [menuFileId, setMenuFileId] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const menuButtonRefs = useRef({});
@@ -425,10 +431,19 @@ export default function FilesScreen() {
       setSearchResults(null);
       return;
     }
-    const res = await searchFiles(token, query);
-    if (res.success) {
-      setSearchResults(res.data);
-    } else {
+    
+    try {
+      const token = await AsyncStorage.getItem('jwt');
+      if (!token) return;
+      
+      const res = await searchFiles(token, query);
+      if (res.success) {
+        setSearchResults(res.data);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (err) {
+      console.error('Search error:', err);
       setSearchResults([]);
     }
   };
@@ -698,22 +713,30 @@ export default function FilesScreen() {
     }
   };
 
-  // Filtering logic for categories
-  let filteredFiles = fileList;
+  // Filtering logic for categories and search
+  let filteredFiles = searchResults || fileList;
   let showFolders = selectedCategory === 'all' || selectedCategory === 'folders';
   
   console.log('Current fileList:', fileList);
   console.log('Current folders:', folders);
   console.log('Selected category:', selectedCategory);
   console.log('Show folders:', showFolders);
+  console.log('Search results:', searchResults);
+  console.log('Search query:', searchQuery);
   
-  if (selectedCategory === 'favourites') {
-    filteredFiles = fileList.filter(f => f.favourite || f.favorites);
-  } else if (selectedCategory === 'folders') {
-    // For folders tab, we don't need to filter files since we show folders separately
-    filteredFiles = [];
-  } else if (selectedCategory === 'compressed') {
-    filteredFiles = fileList.filter(f => f.name && f.name.includes('_compressed'));
+  // If there's a search query, use search results and skip category filtering
+  if (searchQuery && searchResults) {
+    // Search results are already filtered, just apply sorting
+  } else {
+    // Apply category filtering only when not searching
+    if (selectedCategory === 'favourites') {
+      filteredFiles = fileList.filter(f => f.favourite || f.favorites);
+    } else if (selectedCategory === 'folders') {
+      // For folders tab, we don't need to filter files since we show folders separately
+      filteredFiles = [];
+    } else if (selectedCategory === 'compressed') {
+      filteredFiles = fileList.filter(f => f.name && f.name.includes('_compressed'));
+    }
   }
   
   console.log('Filtered files:', filteredFiles);
@@ -748,8 +771,8 @@ export default function FilesScreen() {
     const CENTER = 130;
     const angleStep = (2 * Math.PI) / menuOptions.length;
     return (
-      <View style={styles.overlay} pointerEvents="box-none">
-        <View style={styles.wheel}>
+      <View style={[styles.overlay, { backgroundColor: 'rgba(0, 0, 0, 0.4)' }]} pointerEvents="box-none">
+        <View style={[styles.wheel, { backgroundColor: '#2a2a2a', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, elevation: 15 }]}>
           {menuOptions.map((opt, i) => {
             const angle = i * angleStep - Math.PI / 2;
             const x = CENTER + RADIUS * Math.cos(angle) - 32;
@@ -757,11 +780,25 @@ export default function FilesScreen() {
             return (
               <TouchableOpacity
                 key={opt.label}
-                style={[styles.iconButton, { left: x, top: y }]}
+                style={[
+                  styles.iconButton, 
+                  { 
+                    left: x, 
+                    top: y, 
+                    backgroundColor: '#3a3a3a',
+                    shadowColor: '#000',
+                    shadowOpacity: 0.2,
+                    shadowRadius: 12,
+                    shadowOffset: { width: 0, height: 6 },
+                    elevation: 8,
+                    borderWidth: 1,
+                    borderColor: '#4a4a4a'
+                  }
+                ]}
                 onPress={() => onPress(opt.label)}
-                activeOpacity={0.8}
+                activeOpacity={0.7}
               >
-                <Feather name={opt.icon} size={32} color="#2563eb" />
+                <Feather name={opt.icon} size={28} color="#0061FF" />
               </TouchableOpacity>
             );
           })}
@@ -982,15 +1019,15 @@ export default function FilesScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Spinner overlay when uploading */}
       {uploading && (
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.6)' }}>
-          <ActivityIndicator size="large" color="#2563eb" />
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.overlay }}>
+          <ActivityIndicator size="large" color={theme.primary} />
           {uploadProgress > 0 && (
             <View style={styles.uploadProgressWrap}>
-              <View style={[styles.uploadProgressBar, { width: `${uploadProgress}%` }]} />
-              <Text style={styles.uploadProgressText}>{uploadProgress}%</Text>
+              <View style={[styles.uploadProgressBar, { width: `${uploadProgress}%`, backgroundColor: theme.primary }]} />
+              <Text style={[styles.uploadProgressText, { color: theme.text }]}>{uploadProgress}%</Text>
             </View>
           )}
         </View>
@@ -1017,15 +1054,15 @@ export default function FilesScreen() {
           </Animated.View>
         </View>
       )}
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         {/* Breadcrumb Navigation */}
         <View style={styles.breadcrumbWrap}>
           {getBreadcrumbs(folderPath).map((crumb, idx, arr) => (
             <View key={idx} style={styles.breadcrumbItem}>
               <TouchableOpacity disabled={idx === arr.length - 1} onPress={() => handleBreadcrumbPress(idx)}>
-                <Text style={[styles.breadcrumbText, idx === arr.length - 1 && styles.breadcrumbTextActive]}>{crumb}</Text>
+                <Text style={[styles.breadcrumbText, { color: theme.textSecondary }, idx === arr.length - 1 && { color: theme.text }]}>{crumb}</Text>
               </TouchableOpacity>
-              {idx < arr.length - 1 && <Text style={styles.breadcrumbSeparator}>/</Text>}
+              {idx < arr.length - 1 && <Text style={[styles.breadcrumbSeparator, { color: theme.textSecondary }]}>/</Text>}
             </View>
           ))}
         </View>
@@ -1033,8 +1070,8 @@ export default function FilesScreen() {
         {/* Current Folder Indicator */}
         {currentFolderId && (
           <View style={styles.currentFolderIndicator}>
-            <Feather name="folder" size={16} color="#0061FF" />
-            <Text style={styles.currentFolderText}>
+            <Feather name="folder" size={16} color={theme.primary} />
+            <Text style={[styles.currentFolderText, { color: theme.textSecondary }]}>
               Inside: {folderPath[folderPath.length - 1]?.name || 'Folder'}
             </Text>
           </View>
@@ -1046,23 +1083,23 @@ export default function FilesScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={refreshFiles}
-              colors={['#0061FF']}
-              tintColor="#0061FF"
+              colors={[theme.primary]}
+              tintColor={theme.primary}
             />
           }
         >
           {/* Search Bar */}
-          <View style={styles.searchBarWrap}>
-            <Feather name="search" size={20} color="#888" style={styles.searchIcon} />
+          <View style={[styles.searchBarWrap, { backgroundColor: theme.searchBackground }]}>
+            <Feather name="search" size={20} color={theme.searchPlaceholder} style={styles.searchIcon} />
             <TextInput
-              style={styles.searchInputModern}
-              placeholder="Search"
-              placeholderTextColor="#bbb"
+              style={[styles.searchInputModern, { color: theme.searchText }]}
+              placeholder="Search files..."
+              placeholderTextColor={theme.searchPlaceholder}
               value={searchQuery}
               onChangeText={handleSearch}
             />
             <TouchableOpacity onPress={refreshFiles} style={{ padding: 8 }}>
-              <Feather name="refresh-cw" size={20} color="#0061FF" />
+              <Feather name="refresh-cw" size={20} color={theme.primary} />
             </TouchableOpacity>
           </View>
           {/* Category Bar */}
@@ -1072,23 +1109,25 @@ export default function FilesScreen() {
                 key={cat.key}
                 style={[
                   styles.categoryButton,
-                  selectedCategory === cat.key && styles.categoryButtonSelected,
+                  { backgroundColor: theme.secondary },
+                  selectedCategory === cat.key && { backgroundColor: theme.primary },
                 ]}
                 activeOpacity={0.7}
                 onPress={() => setSelectedCategory(cat.key)}
               >
                 <Text style={[
                   styles.categoryButtonText,
-                  selectedCategory === cat.key && styles.categoryButtonTextSelected,
+                  { color: theme.textSecondary },
+                  selectedCategory === cat.key && { color: theme.textInverse },
                 ]}>{cat.label}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
           {/* Sort Bar */}
           <View style={styles.sortBar}>
-            <View style={{ flex: 1, height: 2, backgroundColor: '#e0e7ef', borderRadius: 1 }} />
+            <View style={{ flex: 1, height: 2, backgroundColor: theme.border, borderRadius: 1 }} />
             <TouchableOpacity style={styles.sortIconBtn} onPress={() => setSortModalVisible(true)}>
-              <Feather name="sliders" size={22} color="#2563eb" />
+              <Feather name="sliders" size={22} color={theme.primary} />
             </TouchableOpacity>
           </View>
           {/* Sort Modal */}
@@ -1098,33 +1137,47 @@ export default function FilesScreen() {
             animationType="slide"
             onRequestClose={() => setSortModalVisible(false)}
           >
-            <View style={styles.sortModalOverlay}>
-              <View style={styles.sortModalCard}>
-                <Text style={styles.sortModalTitle}>Sort by</Text>
-                <View style={styles.sortModalDivider} />
+            <View style={[styles.sortModalOverlay, { backgroundColor: theme.overlay }]}>
+              <View style={[styles.sortModalCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
+                <Text style={[styles.sortModalTitle, { color: theme.text }]}>Sort by</Text>
+                <View style={[styles.sortModalDivider, { backgroundColor: theme.border }]} />
                 {['type', 'date', 'size'].map(opt => (
                   <TouchableOpacity
                     key={opt}
-                    style={[styles.sortOptionBtn, sortOption === opt && styles.sortOptionBtnSelected]}
+                    style={[styles.sortOptionBtn, { backgroundColor: theme.input }, sortOption === opt && [styles.sortOptionBtnSelected, { backgroundColor: theme.primary }]]}
                     onPress={() => {
                       setSortOption(opt);
                       setSortModalVisible(false);
                     }}
                   >
-                    <Text style={[styles.sortOptionText, sortOption === opt && styles.sortOptionTextSelected]}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</Text>
+                    <Text style={[styles.sortOptionText, { color: theme.textSecondary }, sortOption === opt && [styles.sortOptionTextSelected, { color: theme.textInverse }]]}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</Text>
                   </TouchableOpacity>
                 ))}
                 <TouchableOpacity style={styles.sortModalCloseBtn} onPress={() => setSortModalVisible(false)}>
-                  <Text style={styles.sortModalCloseText}>Cancel</Text>
+                  <Text style={[styles.sortModalCloseText, { color: theme.primary }]}>Cancel</Text>
                 </TouchableOpacity>
               </View>
             </View>
           </Modal>
-          {/* SVG Illustration - Only show when no files and not in folders tab */}
+          {/* Enhanced Empty State - Only show when no files and not in folders tab */}
           {filteredFiles.length === 0 && folders.length === 0 && selectedCategory !== 'folders' && (
-          <View style={styles.uploadIllustrationWrap}>
-            <UploadSVG width={120} height={90} />
-          </View>
+            <View style={styles.emptyStateContainer}>
+              <View style={[styles.emptyStateIconContainer, { backgroundColor: theme.primaryLight }]}>
+                <Feather name="folder-open" size={48} color={theme.primary} />
+              </View>
+              <Text style={[styles.emptyStateTitle, { color: theme.text }]}>No files yet</Text>
+              <Text style={[styles.emptyStateSubtitle, { color: theme.textSecondary }]}>
+                Upload your first file to get started with CloudStore
+              </Text>
+              <TouchableOpacity 
+                style={[styles.emptyStateButton, { backgroundColor: theme.primary }]} 
+                onPress={() => setShowUploadModal(true)}
+                activeOpacity={0.85}
+              >
+                <Feather name="upload" size={20} color={theme.textInverse} style={{ marginRight: 8 }} />
+                <Text style={[styles.emptyStateButtonText, { color: theme.textInverse }]}>Upload Files</Text>
+              </TouchableOpacity>
+            </View>
           )}
           {/* Folders Grid - Only show in 'all' and 'folders' tabs */}
           {showFolders && (
@@ -1146,7 +1199,21 @@ export default function FilesScreen() {
                     ))
                   ) : (
                     <View style={styles.emptyFolderState}>
-                      <Feather name="folder-plus" size={48} color="#cbd5e1" />
+                      <View style={[styles.emptyStateIconContainer, { backgroundColor: theme.primaryLight }]}>
+                        <Feather name="folder-plus" size={48} color={theme.primary} />
+                      </View>
+                      <Text style={[styles.emptyStateTitle, { color: theme.text }]}>No folders yet</Text>
+                      <Text style={[styles.emptyStateSubtitle, { color: theme.textSecondary }]}>
+                        Create your first folder to organize your files
+                      </Text>
+                      <TouchableOpacity 
+                        style={[styles.emptyStateButton, { backgroundColor: theme.primary }]} 
+                        onPress={() => setShowFolderModal(true)}
+                        activeOpacity={0.85}
+                      >
+                        <Feather name="folder-plus" size={20} color={theme.textInverse} style={{ marginRight: 8 }} />
+                        <Text style={[styles.emptyStateButtonText, { color: theme.textInverse }]}>Create Folder</Text>
+                      </TouchableOpacity>
                     </View>
                   )}
                 </View>
@@ -1160,7 +1227,25 @@ export default function FilesScreen() {
             </View>
           ) : filteredFiles.length === 0 && selectedCategory !== 'folders' ? (
             <View style={styles.emptyFileState}>
-              <Feather name="upload-cloud" size={48} color="#cbd5e1" />
+              <View style={[styles.emptyStateIconContainer, { backgroundColor: theme.primaryLight }]}>
+                <Feather name="file" size={48} color={theme.primary} />
+              </View>
+              <Text style={[styles.emptyStateTitle, { color: theme.text }]}>No files found</Text>
+              <Text style={[styles.emptyStateSubtitle, { color: theme.textSecondary }]}>
+                {selectedCategory === 'favourites' ? 'No favorite files yet' : 
+                 selectedCategory === 'compressed' ? 'No compressed files yet' : 
+                 'Upload files to see them here'}
+              </Text>
+              {selectedCategory === 'all' && (
+                <TouchableOpacity 
+                  style={[styles.emptyStateButton, { backgroundColor: theme.primary }]} 
+                  onPress={() => setShowUploadModal(true)}
+                  activeOpacity={0.85}
+                >
+                  <Feather name="upload" size={20} color={theme.textInverse} style={{ marginRight: 8 }} />
+                  <Text style={[styles.emptyStateButtonText, { color: theme.textInverse }]}>Upload Files</Text>
+                </TouchableOpacity>
+              )}
             </View>
           ) : (
             filteredFiles.map((item, idx) => (
@@ -1239,7 +1324,7 @@ export default function FilesScreen() {
           animationType="fade"
           onRequestClose={() => setShowUploadModal(false)}
         >
-          <TouchableOpacity style={styles.overlay} onPress={() => setShowUploadModal(false)} activeOpacity={1}>
+          <TouchableOpacity style={[styles.overlay, { backgroundColor: 'rgba(0, 0, 0, 0.4)' }]} onPress={() => setShowUploadModal(false)} activeOpacity={1}>
             <RadialMenu onPress={handleOptionPress} />
           </TouchableOpacity>
         </Modal>
@@ -1479,19 +1564,19 @@ export default function FilesScreen() {
           onRequestClose={() => setShowSuccessModal(false)}
         >
           <TouchableWithoutFeedback onPress={() => setShowSuccessModal(false)}>
-            <View style={styles.modalOverlay}>
+            <View style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}>
               <TouchableWithoutFeedback>
-                <View style={styles.successModalContent}>
-                  <View style={styles.successIconContainer}>
+                <View style={[styles.successModalContent, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
+                  <View style={[styles.successIconContainer, { backgroundColor: theme.successLight }]}>
                     <Feather name="check-circle" size={48} color="#10b981" />
                   </View>
-                  <Text style={styles.successTitle}>Success!</Text>
-                  <Text style={styles.successMessage}>{successMessage}</Text>
+                  <Text style={[styles.successTitle, { color: theme.text }]}>Success!</Text>
+                  <Text style={[styles.successMessage, { color: theme.textSecondary }]}>{successMessage}</Text>
                   <TouchableOpacity
-                    style={styles.successButton}
+                    style={[styles.successButton, { backgroundColor: '#10b981' }]}
                     onPress={() => setShowSuccessModal(false)}
                   >
-                    <Text style={styles.successButtonText}>OK</Text>
+                    <Text style={[styles.successButtonText, { color: theme.textInverse }]}>OK</Text>
                   </TouchableOpacity>
                 </View>
               </TouchableWithoutFeedback>
@@ -1772,17 +1857,14 @@ const styles = StyleSheet.create({
   },
   sortModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.18)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   sortModalCard: {
-    backgroundColor: '#fff',
     borderRadius: 28,
     paddingVertical: 36,
     paddingHorizontal: 32,
     minWidth: 240,
-    shadowColor: '#003366',
     shadowOpacity: 0.22,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 12 },
@@ -1793,14 +1875,12 @@ const styles = StyleSheet.create({
   sortModalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2563eb',
     marginBottom: 10,
     textAlign: 'center',
   },
   sortModalDivider: {
     width: '100%',
     height: 1.5,
-    backgroundColor: '#e0e7ef',
     marginBottom: 18,
     borderRadius: 1,
   },
@@ -1811,11 +1891,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     width: 160,
     alignItems: 'center',
-    backgroundColor: '#f7fafd',
     borderWidth: 0,
   },
   sortOptionBtnSelected: {
-    backgroundColor: '#e6f0fa',
     borderColor: '#2563eb',
     borderWidth: 2,
     shadowColor: '#2563eb',
@@ -1826,7 +1904,6 @@ const styles = StyleSheet.create({
   },
   sortOptionText: {
     fontSize: 16,
-    color: '#222',
     fontWeight: 'bold',
   },
   sortOptionTextSelected: {
@@ -1837,7 +1914,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sortModalCloseText: {
-    color: '#2563eb',
     fontWeight: 'bold',
     fontSize: 17,
     letterSpacing: 0.2,
@@ -1856,14 +1932,12 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.2)',
     justifyContent: 'flex-end',
   },
   wheel: {
     width: 260,
     height: 260,
     borderRadius: 130,
-    backgroundColor: '#e5e7eb',
     position: 'absolute',
     top: '50%',
     left: '50%',
@@ -1878,10 +1952,8 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#e5e7eb',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#2563eb',
     shadowOpacity: 0.08,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
@@ -1966,7 +2038,6 @@ const styles = StyleSheet.create({
   skeletonFile: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f6f7f9',
     borderRadius: 12,
     marginHorizontal: 12,
     marginVertical: 4,
@@ -1974,7 +2045,6 @@ const styles = StyleSheet.create({
   },
   skeletonFolder: {
     alignItems: 'center',
-    backgroundColor: '#f6f7f9',
     borderRadius: 12,
     margin: 8,
     padding: 12,
@@ -1984,13 +2054,11 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 8,
-    backgroundColor: '#e0e7ef',
     marginRight: 12,
   },
   skeletonTextBlock: {
     height: 14,
     borderRadius: 6,
-    backgroundColor: '#e0e7ef',
     flex: 1,
     marginBottom: 6,
   },
@@ -1998,7 +2066,6 @@ const styles = StyleSheet.create({
     height: 10,
     width: 60,
     borderRadius: 5,
-    backgroundColor: '#e0e7ef',
     marginTop: 2,
   },
   uploadProgressWrap: {
@@ -2129,13 +2196,11 @@ const styles = StyleSheet.create({
   },
   // Success Modal Styles
   successModalContent: {
-    backgroundColor: '#fff',
     borderRadius: 24,
     padding: 32,
     width: '85%',
     maxWidth: 300,
     alignItems: 'center',
-    shadowColor: '#000',
     shadowOpacity: 0.15,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 10 },
@@ -2145,7 +2210,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#ecfdf5',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
@@ -2153,18 +2217,15 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#222',
     marginBottom: 8,
   },
   successMessage: {
     fontSize: 16,
-    color: '#666',
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 22,
   },
   successButton: {
-    backgroundColor: '#10b981',
     paddingVertical: 14,
     paddingHorizontal: 32,
     borderRadius: 12,
@@ -2174,7 +2235,6 @@ const styles = StyleSheet.create({
   successButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
   },
   // Compression Modal Styles
   settingGroup: {
@@ -2269,41 +2329,60 @@ const styles = StyleSheet.create({
     color: '#10b981',
     textAlign: 'center',
   },
-  // Empty State Styles
+  // Enhanced Empty State Styles
+  emptyStateContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 80,
+    paddingHorizontal: 20,
+  },
+  emptyStateIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyStateSubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
+    paddingHorizontal: 20,
+  },
+  emptyStateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  emptyStateButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // Empty State Styles (Legacy - keeping for compatibility)
   emptyFolderState: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
     paddingHorizontal: 20,
   },
-  emptyFolderText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#64748b',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyFolderSubtext: {
-    fontSize: 14,
-    color: '#94a3b8',
-    textAlign: 'center',
-  },
   emptyFileState: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
     paddingHorizontal: 20,
-  },
-  emptyFileText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#64748b',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyFileSubtext: {
-    fontSize: 14,
-    color: '#94a3b8',
-    textAlign: 'center',
   },
 }); 

@@ -1,19 +1,22 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { useTheme } from '../theme/ThemeContext';
 // If using expo-blur, uncomment the next line:
 // import { BlurView } from 'expo-blur';
 
 export default function SimplePrompt({ visible, message, onClose }) {
+  const { theme } = useTheme();
+  
   if (!visible) return null;
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       {/* Uncomment BlurView below if using expo-blur, else use fallback overlay */}
       {/* <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} /> */}
-      <View style={styles.overlay} />
-      <View style={styles.card}>
-        <Text style={styles.text}>{message}</Text>
-        <TouchableOpacity style={styles.button} onPress={onClose} activeOpacity={0.85}>
-          <Text style={styles.buttonText}>OK</Text>
+      <View style={[styles.overlay, { backgroundColor: theme.overlay }]} />
+      <View style={[styles.card, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
+        <Text style={[styles.text, { color: theme.primary }]}>{message}</Text>
+        <TouchableOpacity style={[styles.button, { backgroundColor: theme.primary }]} onPress={onClose} activeOpacity={0.85}>
+          <Text style={[styles.buttonText, { color: theme.textInverse }]}>OK</Text>
         </TouchableOpacity>
       </View>
     </Modal>
@@ -23,7 +26,6 @@ export default function SimplePrompt({ visible, message, onClose }) {
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.7)',
     // If using BlurView, you can remove this backgroundColor
   },
   card: {
@@ -31,11 +33,9 @@ const styles = StyleSheet.create({
     top: '40%',
     left: '8%',
     right: '8%',
-    backgroundColor: '#fff',
     borderRadius: 22,
     padding: 32,
     alignItems: 'center',
-    shadowColor: '#003366',
     shadowOpacity: 0.22,
     shadowRadius: 15,
     shadowOffset: { width: 0, height: 8 },
@@ -43,20 +43,17 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 17,
-    color: '#2563eb',
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 18,
   },
   button: {
-    backgroundColor: '#2563eb',
     borderRadius: 14,
     paddingVertical: 12,
     paddingHorizontal: 36,
     alignItems: 'center',
   },
   buttonText: {
-    color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
   },

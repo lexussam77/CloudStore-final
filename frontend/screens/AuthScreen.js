@@ -6,8 +6,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { loginUser, registerUser } from './api';
 import CustomPrompt from './CustomPrompt';
 import { AuthContext } from './AuthContext';
+import { useTheme } from '../theme/ThemeContext';
 
 export default function AuthScreen({ navigation }) {
+  const { theme } = useTheme();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -153,7 +155,7 @@ export default function AuthScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%' }}>
         {/* Logo */}
         <Animated.View
@@ -171,11 +173,11 @@ export default function AuthScreen({ navigation }) {
             },
           ]}
         >
-          <AntDesign name="cloud" size={38} color="#0061FF" style={{ marginBottom: 2 }} />
-          <Text style={styles.logoText}>CloudStore</Text>
+          <AntDesign name="cloud" size={38} color={theme.primary} style={{ marginBottom: 2 }} />
+          <Text style={[styles.logoText, { color: theme.text }]}>CloudStore</Text>
         </Animated.View>
         {/* Flip Card */}
-        <Animated.View style={[styles.cardWrap, { opacity: cardAnim, transform: [{ translateY: cardAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}> 
+        <Animated.View style={[styles.cardWrap, { backgroundColor: theme.card, shadowColor: theme.shadow }, { opacity: cardAnim, transform: [{ translateY: cardAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}> 
         <View style={{ height: 340, width: '100%', alignItems: 'center', marginTop: 10 }}>
             <Animated.View
               style={[styles.flipCard, { transform: [{ rotateY: frontInterpolate }] }]}
@@ -184,38 +186,38 @@ export default function AuthScreen({ navigation }) {
             {isLogin && (
               <View style={styles.form}>
                 <TextInput
-                  style={[styles.input, focusedInput === 'identifier' && styles.inputFocused]}
+                  style={[styles.input, { backgroundColor: theme.searchBackground, color: theme.searchText, borderColor: theme.border }, focusedInput === 'identifier' && { borderColor: theme.primary }]}
                   placeholder="Email or Username"
                   value={email}
                   onChangeText={setEmail}
-                  placeholderTextColor="#888"
+                  placeholderTextColor={theme.searchPlaceholder}
                   onFocus={() => setFocusedInput('identifier')}
                   onBlur={() => setFocusedInput('')}
                 />
                 <TextInput
-                  style={[styles.input, focusedInput === 'password' && styles.inputFocused]}
+                  style={[styles.input, { backgroundColor: theme.searchBackground, color: theme.searchText, borderColor: theme.border }, focusedInput === 'password' && { borderColor: theme.primary }]}
                   placeholder="Password"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
-                  placeholderTextColor="#888"
+                  placeholderTextColor={theme.searchPlaceholder}
                   onFocus={() => setFocusedInput('password')}
                   onBlur={() => setFocusedInput('')}
                 />
-                <TouchableOpacity style={styles.submitBtn} activeOpacity={0.85} onPress={handleSubmit} disabled={loading}>
-                  {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>Log in</Text>}
+                <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.primary }]} activeOpacity={0.85} onPress={handleSubmit} disabled={loading}>
+                  {loading ? <ActivityIndicator color={theme.textInverse} /> : <Text style={[styles.submitText, { color: theme.textInverse }]}>Log in</Text>}
                 </TouchableOpacity>
                 <TouchableOpacity onPress={flipCard} style={styles.link}>
-                  <Text style={styles.link}>Don't have an account? <Text style={{ color: '#0061FF' }}>Sign up</Text></Text>
+                  <Text style={[styles.link, { color: theme.textSecondary }]}>Don't have an account? <Text style={{ color: theme.primary }}>Sign up</Text></Text>
                 </TouchableOpacity>
                   <View style={styles.dividerRow}>
-                    <View style={styles.divider} />
-                    <Text style={styles.dividerText}>or</Text>
-                    <View style={styles.divider} />
+                    <View style={[styles.divider, { backgroundColor: theme.border }]} />
+                    <Text style={[styles.dividerText, { color: theme.textSecondary }]}>or</Text>
+                    <View style={[styles.divider, { backgroundColor: theme.border }]} />
                   </View>
-                <TouchableOpacity style={styles.googleBtn} activeOpacity={0.85} onPress={() => Alert.alert('Google Sign-In')}>
+                <TouchableOpacity style={[styles.googleBtn, { backgroundColor: theme.card, borderColor: theme.border }]} activeOpacity={0.85} onPress={() => Alert.alert('Google Sign-In')}>
                   <Image source={require('../assets/images/Google.png')} style={styles.googleLogo} />
-                  <Text style={styles.googleBtnText}>Continue with Google</Text>
+                  <Text style={[styles.googleBtnText, { color: theme.text }]}>Continue with Google</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -227,57 +229,57 @@ export default function AuthScreen({ navigation }) {
             {!isLogin && (
               <View style={styles.form}>
                 <TextInput
-                  style={[styles.input, focusedInput === 'name' && styles.inputFocused]}
+                  style={[styles.input, { backgroundColor: theme.searchBackground, color: theme.searchText, borderColor: theme.border }, focusedInput === 'name' && { borderColor: theme.primary }]}
                   placeholder="Full name"
                   value={name}
                   onChangeText={setName}
-                  placeholderTextColor="#888"
+                  placeholderTextColor={theme.searchPlaceholder}
                   onFocus={() => setFocusedInput('name')}
                   onBlur={() => setFocusedInput('')}
                 />
                 <TextInput
-                  style={[styles.input, focusedInput === 'email' && styles.inputFocused]}
+                  style={[styles.input, { backgroundColor: theme.searchBackground, color: theme.searchText, borderColor: theme.border }, focusedInput === 'email' && { borderColor: theme.primary }]}
                   placeholder="Email address"
                   value={email}
                   onChangeText={setEmail}
-                  placeholderTextColor="#888"
+                  placeholderTextColor={theme.searchPlaceholder}
                   onFocus={() => setFocusedInput('email')}
                   onBlur={() => setFocusedInput('')}
                 />
                 <TextInput
-                  style={[styles.input, focusedInput === 'password' && styles.inputFocused]}
+                  style={[styles.input, { backgroundColor: theme.searchBackground, color: theme.searchText, borderColor: theme.border }, focusedInput === 'password' && { borderColor: theme.primary }]}
                   placeholder="Password"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
-                  placeholderTextColor="#888"
+                  placeholderTextColor={theme.searchPlaceholder}
                   onFocus={() => setFocusedInput('password')}
                   onBlur={() => setFocusedInput('')}
                 />
                 <TextInput
-                  style={[styles.input, focusedInput === 'confirmPassword' && styles.inputFocused]}
+                  style={[styles.input, { backgroundColor: theme.searchBackground, color: theme.searchText, borderColor: theme.border }, focusedInput === 'confirmPassword' && { borderColor: theme.primary }]}
                     placeholder="Confirm Password"
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry
-                  placeholderTextColor="#888"
+                  placeholderTextColor={theme.searchPlaceholder}
                   onFocus={() => setFocusedInput('confirmPassword')}
                   onBlur={() => setFocusedInput('')}
                 />
-                <TouchableOpacity style={styles.submitBtn} activeOpacity={0.85} onPress={handleSubmit} disabled={loading}>
-                  {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>Sign up</Text>}
+                <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.primary }]} activeOpacity={0.85} onPress={handleSubmit} disabled={loading}>
+                  {loading ? <ActivityIndicator color={theme.textInverse} /> : <Text style={[styles.submitText, { color: theme.textInverse }]}>Sign up</Text>}
                 </TouchableOpacity>
                 <TouchableOpacity onPress={flipCard} style={styles.link}>
-                  <Text style={styles.link}>Already have an account? <Text style={{ color: '#0061FF' }}>Log in</Text></Text>
+                  <Text style={[styles.link, { color: theme.textSecondary }]}>Already have an account? <Text style={{ color: theme.primary }}>Log in</Text></Text>
                 </TouchableOpacity>
                   <View style={styles.dividerRow}>
-                    <View style={styles.divider} />
-                    <Text style={styles.dividerText}>or</Text>
-                    <View style={styles.divider} />
+                    <View style={[styles.divider, { backgroundColor: theme.border }]} />
+                    <Text style={[styles.dividerText, { color: theme.textSecondary }]}>or</Text>
+                    <View style={[styles.divider, { backgroundColor: theme.border }]} />
                   </View>
-                <TouchableOpacity style={styles.googleBtn} activeOpacity={0.85} onPress={() => Alert.alert('Google Sign-In')}>
+                <TouchableOpacity style={[styles.googleBtn, { backgroundColor: theme.card, borderColor: theme.border }]} activeOpacity={0.85} onPress={() => Alert.alert('Google Sign-In')}>
                   <Image source={require('../assets/images/Google.png')} style={styles.googleLogo} />
-                  <Text style={styles.googleBtnText}>Continue with Google</Text>
+                  <Text style={[styles.googleBtnText, { color: theme.text }]}>Continue with Google</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -298,7 +300,6 @@ export default function AuthScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   logoWrap: {
     alignItems: 'center',
@@ -307,7 +308,6 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#0061FF',
     marginTop: 2,
     letterSpacing: 0.2,
   },
@@ -315,10 +315,8 @@ const styles = StyleSheet.create({
     width: '92%',
     maxWidth: 400,
     alignItems: 'center',
-    backgroundColor: '#fff',
     borderRadius: 22,
     padding: 18,
-    shadowColor: '#0061FF',
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -345,42 +343,34 @@ const styles = StyleSheet.create({
   },
   input: {
     width: '100%',
-    backgroundColor: '#f6f7f9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    color: '#222',
     marginBottom: 12,
     borderWidth: 1.5,
-    borderColor: '#f6f7f9',
     fontWeight: '500',
   },
   inputFocused: {
-    borderColor: '#0061FF',
-    backgroundColor: '#e6f0ff',
+    // Colors applied dynamically
   },
   submitBtn: {
     width: '100%',
-    backgroundColor: '#0061FF',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 2,
     marginBottom: 8,
-    shadowColor: '#0061FF',
     shadowOpacity: 0.08,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
   submitText: {
-    color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
   },
   link: {
-    color: '#0061FF',
     fontWeight: '500',
     fontSize: 15,
     marginTop: 2,
@@ -396,28 +386,23 @@ const styles = StyleSheet.create({
   divider: {
     flex: 1,
     height: 1.5,
-    backgroundColor: '#e0e7ef',
     borderRadius: 1,
   },
   dividerText: {
     marginHorizontal: 10,
-    color: '#888',
     fontSize: 14,
     fontWeight: '500',
   },
   googleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#e0e7ef',
     paddingVertical: 12,
     paddingHorizontal: 18,
     width: '100%',
     justifyContent: 'center',
     marginTop: 2,
-    shadowColor: '#000',
     shadowOpacity: 0.03,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
@@ -429,7 +414,6 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   googleBtnText: {
-    color: '#222',
     fontWeight: 'bold',
     fontSize: 15,
   },

@@ -24,6 +24,7 @@ import ChangePasswordScreen from './screens/ChangePasswordScreen';
 import TwoFactorScreen from './screens/TwoFactorScreen';
 import CreditCardScreen from './screens/CreditCardScreen';
 import FileViewerScreen from './screens/FileViewerScreen';
+import { ThemeProvider, useTheme } from './theme/ThemeContext';
 
 const Stack = createNativeStackNavigator();
 
@@ -72,10 +73,12 @@ function AppNavigator() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <NavigationContainer>
-        <AppNavigator />
-      </NavigationContainer>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <NavigationContainer>
+          <AppNavigator />
+        </NavigationContainer>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

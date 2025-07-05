@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity, SafeAreaView } from 'react-native';
 import MyFilesSVG from '../assets/images/undraw_my-files_1xwx.svg';
 import UploadSVG from '../assets/images/undraw_upload_cucu.svg';
+import { useTheme } from '../theme/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -27,6 +28,7 @@ const slides = [
 ];
 
 export default function OnboardingScreen({ navigation }) {
+  const { theme } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef();
 
@@ -44,7 +46,7 @@ export default function OnboardingScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <FlatList
         ref={flatListRef}
         data={slides}
@@ -57,8 +59,8 @@ export default function OnboardingScreen({ navigation }) {
         renderItem={({ item }) => (
           <View style={styles.slide}>
             <item.Illustration width={220} height={180} style={styles.illustration} />
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.description}>{item.description}</Text>
+            <Text style={[styles.title, { color: theme.primary }]}>{item.title}</Text>
+            <Text style={[styles.description, { color: theme.textSecondary }]}>{item.description}</Text>
           </View>
         )}
       />
@@ -66,12 +68,12 @@ export default function OnboardingScreen({ navigation }) {
         {slides.map((_, idx) => (
           <View
             key={idx}
-            style={[styles.dot, currentIndex === idx && styles.dotActive]}
+            style={[styles.dot, { backgroundColor: theme.border }, currentIndex === idx && { backgroundColor: theme.primary, width: 18 }]}
           />
         ))}
       </View>
-      <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
-        <Text style={styles.nextBtnText}>{currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}</Text>
+      <TouchableOpacity style={[styles.nextBtn, { backgroundColor: theme.primary }]} onPress={handleNext}>
+        <Text style={[styles.nextBtnText, { color: theme.textInverse }]}>{currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -80,7 +82,6 @@ export default function OnboardingScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -96,13 +97,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#0061FF',
     marginBottom: 18,
     textAlign: 'center',
   },
   description: {
     fontSize: 18,
-    color: '#444',
     textAlign: 'center',
     marginBottom: 32,
   },
@@ -117,15 +116,12 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#e0e7ef',
     marginHorizontal: 6,
   },
   dotActive: {
-    backgroundColor: '#0061FF',
     width: 18,
   },
   nextBtn: {
-    backgroundColor: '#0061FF',
     borderRadius: 24,
     paddingVertical: 14,
     paddingHorizontal: 40,
@@ -133,7 +129,6 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   nextBtnText: {
-    color: '#fff',
     fontWeight: 'bold',
     fontSize: 18,
   },

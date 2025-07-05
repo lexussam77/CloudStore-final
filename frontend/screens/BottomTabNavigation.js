@@ -6,6 +6,7 @@ import PhotosScreen from './PhotosScreen';
 import AccountScreen from './AccountScreen';
 import CompressionScreen from './CompressionScreen';
 import Feather from 'react-native-vector-icons/Feather';
+import { useTheme } from '../theme/ThemeContext';
 
 const TABS = [
   { key: 'Home', label: 'Home', icon: 'home' },
@@ -16,6 +17,7 @@ const TABS = [
 ];
 
 export default function BottomTabNavigation({ navigation }) {
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('Home');
   const [pressedTab, setPressedTab] = useState(null);
 
@@ -67,24 +69,20 @@ export default function BottomTabNavigation({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Main Screen Content */}
       <View style={styles.content}>
-        {/* Top Bar with Title and Bell */}
-        <View style={styles.topBar}>
-          <Text style={styles.topBarTitle}>{activeTab}</Text>
-          {/* Bell icon for notifications, only on Home tab */}
-          {activeTab === 'Home' && (
-            <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.bellButton}>
-              <Feather name="bell" size={24} color="#0061FF" style={styles.bellIcon} />
-            </TouchableOpacity>
-          )}
-        </View>
+        {/* Top Bar with Title - Hide for Home tab */}
+        {activeTab !== 'Home' && (
+          <View style={[styles.topBar, { borderBottomColor: theme.border }]}>
+            <Text style={[styles.topBarTitle, { color: theme.text }]}>{activeTab}</Text>
+          </View>
+        )}
         <ScreenComponent />
       </View>
       {/* Bottom Tab Bar */}
       <View style={styles.tabBarWrap}>
-        <View style={styles.tabBar}>
+        <View style={[styles.tabBar, { backgroundColor: theme.card, borderColor: theme.border }]}>
           {TABS.map((tab, idx) => {
             const isCompression = tab.key === 'Compression';
             const isActive = activeTab === tab.key;
@@ -106,11 +104,11 @@ export default function BottomTabNavigation({ navigation }) {
                   <Feather
                     name={tab.icon}
                     size={24}
-                    color={isActive ? '#0061FF' : '#888'}
+                    color={isActive ? theme.primary : theme.textSecondary}
                     style={isActive ? styles.activeTabIcon : styles.tabIcon}
                   />
                 </Animated.View>
-                <Text style={[styles.tabLabel, isActive && styles.activeTabLabel, !isActive && { color: '#888' }]}> 
+                <Text style={[styles.tabLabel, { color: theme.textSecondary }, isActive && { color: theme.primary }]}> 
                   {tab.key === 'Compression' ? 'Compress' : tab.label}
                 </Text>
               </TouchableOpacity>
@@ -125,7 +123,6 @@ export default function BottomTabNavigation({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   topBar: {
     height: 50,
@@ -133,7 +130,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
     top: 15,
   },
   topBarTitle: {
@@ -143,14 +139,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
   },
-  bellButton: {
-    marginLeft: 'auto',
-    marginRight: 10,
-    padding: 6,
-  },
-  bellIcon: {
-    marginLeft: 2,
-  },
+
   content: {
     flex: 1,
   },
@@ -163,8 +152,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: 64,
     borderTopWidth: 1,
-    borderColor: '#eee',
-    backgroundColor: '#fff',
     paddingBottom: 4,
     paddingTop: 4,
     alignItems: 'center',
@@ -183,7 +170,6 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   tabLabel: {
-    color: '#222',
     fontSize: 15,
     fontWeight: 'bold',
     fontFamily: 'System',
@@ -191,24 +177,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   activeTabLabel: {
-    color: '#0061FF',
+    // Color will be applied dynamically
   },
   compressionTabLabel: {
-    color: '#0061FF',
     fontWeight: 'bold',
     fontSize: 15,
     marginTop: 16,
     textAlign: 'center',
   },
   compressionTabButton: {
-    backgroundColor: '#fff',
     borderWidth: 2,
-    borderColor: '#0061FF',
     borderRadius: 20,
     padding: 4,
   },
   compressionTabButtonActive: {
-    backgroundColor: '#0061FF',
+    // Background color will be applied dynamically
   },
   compressionIconWrap: {
     width: 40,
