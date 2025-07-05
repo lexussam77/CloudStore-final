@@ -1,16 +1,28 @@
 # CloudStore - Complete File Management Application
 
+## 🆕 What's New (2024)
+- **Permanent Dark Theme:** Sleek black and blue color scheme for a modern, eye-friendly experience
+- **Consistent Theming:** All screens and modals use a unified theme system
+- **Modern UI/UX:** Refined layouts, improved spacing, and professional appearance
+- **Self-Explanatory Empty States:** Friendly icons and messages guide users when no files or folders are present
+- **Circular Storage Indicator:** Visualize your storage usage with a modern circular progress UI
+- **Profile Picture Improvements:** Dummy icon and persistent profile photo support
+- **Input Consistency:** All input fields are now uniform and visually appealing
+- **Enhanced Confirmation Prompts:** All prompts and modals are themed for clarity and accessibility
+
 A full-stack file management application built with React Native (frontend) and Spring Boot (backend), featuring secure file storage, user authentication, and advanced file operations.
 
 ## 🚀 Features
 
 ### Frontend (React Native)
+- **Permanent Dark Mode**: Modern black and blue color palette for all screens
 - **File Management**: Upload, download, rename, delete files
 - **Folder Management**: Create, navigate, and organize folders
 - **File Compression**: Compress files with customizable settings
 - **Favorites System**: Mark and filter favorite files
 - **Search & Filter**: Advanced search and category filtering
-- **Modern UI**: Beautiful, responsive interface with animations
+- **Modern UI**: Beautiful, responsive interface with animations and consistent theming
+- **Self-Explanatory Empty States**: Friendly icons and messages when no files/folders
 - **Breadcrumb Navigation**: Easy folder navigation
 - **File Preview**: Support for various file types
 - **Offline Support**: Basic offline functionality
