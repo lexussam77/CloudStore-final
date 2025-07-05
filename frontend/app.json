@@ -4,25 +4,32 @@
     "slug": "CloudStore",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/cloudstore-logo.png",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "scheme": "ncloudstore",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/cloudstore-logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0F0F0F",
+      "dark": {
+        "image": "./assets/cloudstore-logo.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#0F0F0F"
+      }
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "userInterfaceStyle": "dark"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/cloudstore-logo.png",
+        "backgroundColor": "#0F0F0F"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.lexus.cloudstore"
+      "package": "com.lexus.cloudstore",
+      "userInterfaceStyle": "dark"
     },
     "web": {
       "favicon": "./assets/favicon.png"

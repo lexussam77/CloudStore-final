@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import BottomTabNavigation from './screens/BottomTabNavigation';
+import { Image, View } from 'react-native';
 
 import SettingsScreen from './screens/SettingsScreen';
 import HelpScreen from './screens/HelpScreen';
@@ -15,7 +16,7 @@ import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
 import OpenSourceScreen from './screens/OpenSourceScreen';
 import CCPAPreferencesScreen from './screens/CCPAPreferencesScreen';
 import { AuthProvider, AuthContext } from './screens/AuthContext';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 import AuthScreen from './screens/AuthScreen';
 import ManagePlanScreen from './screens/ManagePlanScreen';
 import ReportBugScreen from './screens/ReportBugScreen';
@@ -28,14 +29,33 @@ import { ThemeProvider, useTheme } from './theme/ThemeContext';
 
 const Stack = createNativeStackNavigator();
 
+function SplashScreen() {
+  return (
+    <View style={{ 
+      flex: 1, 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      backgroundColor: '#0F0F0F' 
+    }}>
+      <Image 
+        source={require('./assets/cloudstore-logo.png')} 
+        style={{ 
+          width: 200, 
+          height: 200, 
+          resizeMode: 'contain',
+          borderRadius: 20
+        }}
+      />
+    </View>
+  );
+}
+
 function AppNavigator() {
   const { jwt, loading } = useContext(AuthContext);
+  const { theme } = useTheme();
+  
   if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#0061FF" />
-      </View>
-    );
+    return <SplashScreen />;
   }
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={jwt ? 'MainTabs' : 'Auth'}>
