@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SectionList, Alert, ScrollView, Image, Modal, Switch } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
-import TermsSVG from '../assets/images/undraw_terms_sx63.svg';
 import FeedbackSVG from '../assets/images/undraw_feedback_ebmx.svg';
 import CustomPrompt from './CustomPrompt';
 import { useTheme } from '../theme/ThemeContext';
@@ -47,7 +46,7 @@ export default function SettingsScreen({ navigation }) {
           <Text style={[styles.settingsDescription, { color: theme.textSecondary }]}>Customize your CloudStore experience with dark mode by default, manage your privacy, and keep your app running smoothly.</Text>
         </View>
         <View style={styles.illustrationWrap}>
-          <TermsSVG width={120} height={90} />
+          <Image source={require('../assets/images/pngs/Website designer-bro.png')} style={styles.illustrationImage} resizeMode="contain" />
         </View>
         <View style={[styles.sectionCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
           <Text style={[styles.sectionHeaderText, { color: theme.textSecondary }]}>Your account</Text>
@@ -96,25 +95,6 @@ export default function SettingsScreen({ navigation }) {
               <Text style={[styles.text, { color: theme.text }]}>{item.label}</Text>
             </TouchableOpacity>
           ))}
-        </View>
-        
-        {/* Theme Toggle */}
-        <View style={[styles.sectionCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
-          <Text style={[styles.sectionHeaderText, { color: theme.textSecondary }]}>Appearance</Text>
-          <View style={[styles.row, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <Feather name="moon" size={22} color={theme.primary} style={styles.icon} />
-            <Text style={[styles.text, { color: theme.text }]}>Dark Mode (Recommended)</Text>
-            <Switch
-              value={isDarkMode}
-              onValueChange={toggleTheme}
-              trackColor={{ false: theme.border, true: theme.primaryLight }}
-              thumbColor={isDarkMode ? theme.primary : theme.textTertiary}
-              style={{ marginLeft: 'auto' }}
-            />
-          </View>
-          <Text style={[styles.themeDescription, { color: theme.textSecondary }]}>
-            Dark mode is the default theme for better eye comfort and modern aesthetics
-          </Text>
         </View>
         <View style={[styles.sectionCard, { backgroundColor: theme.card, shadowColor: theme.shadow, borderColor: theme.error, borderWidth: 1 }] }>
           <Text style={[styles.sectionHeaderText, { color: theme.error }]}>Danger Zone</Text>
@@ -188,47 +168,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   sectionCard: {
-    borderRadius: 20,
-    marginHorizontal: 16,
-    marginBottom: 20,
-    padding: 20,
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
+    borderRadius: 22,
+    marginHorizontal: 18,
+    marginBottom: 26,
+    padding: 26,
+    shadowOpacity: 0.13,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 5,
+    backgroundColor: '#fff',
   },
   sectionHeaderText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    fontFamily: 'System',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderRadius: 18,
-    marginBottom: 10,
-    paddingHorizontal: 10,
-    shadowColor: '#003366',
-    shadowOpacity: 0.22,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    borderColor: '#f0f0f0',
+    paddingVertical: 18,
+    paddingHorizontal: 0,
+    marginBottom: 0,
   },
   text: {
     fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: 'System',
+    marginLeft: 14,
+    fontWeight: '600',
   },
   icon: {
-    marginRight: 14,
+    marginRight: 12,
+    fontSize: 24,
   },
   illustrationWrap: {
     alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 8,
+    justifyContent: 'center',
+    marginVertical: 18,
+  },
+  illustrationImage: {
+    width: 180,
+    height: 130,
   },
   dangerIllustrationWrap: {
     alignItems: 'center',
