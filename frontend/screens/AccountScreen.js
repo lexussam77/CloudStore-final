@@ -39,7 +39,6 @@ export default function AccountScreen({ navigation }) {
   const { theme } = useTheme();
   const [avatarUri, setAvatarUri] = useState(null);
   const [storage, setStorage] = useState('4.0 MB / 2.0 GB');
-  const [storagePercentage, setStoragePercentage] = useState(0.2);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const isFocused = useIsFocused();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -51,11 +50,8 @@ export default function AccountScreen({ navigation }) {
       const newStorage = await AsyncStorage.getItem('user_storage');
       if (newStorage) {
         setStorage(`4.0 MB / ${newStorage}`);
-        // Calculate percentage (4.0 MB out of 2.0 GB = 0.2%)
-        setStoragePercentage(0.002);
       } else {
         setStorage('4.0 MB / 2.0 GB');
-        setStoragePercentage(0.002);
       }
     };
     fetchStorage();
@@ -120,37 +116,40 @@ export default function AccountScreen({ navigation }) {
                 <Text style={[styles.name, { color: theme.text }]}>{user.name}</Text>
                 <Text style={[styles.email, { color: theme.textSecondary }]}>{user.email}</Text>
         </Animated.View>
+        
         {/* Plan and Storage Card */}
-        <Animated.View style={[styles.singleCard, { backgroundColor: theme.card, shadowColor: theme.shadow, shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 4 }, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}>
-          <View style={styles.planRow}>
-            <Feather name="award" size={22} color={theme.primary} style={styles.planIcon} />
-            <Text style={[styles.planBadge, { color: theme.primary, backgroundColor: theme.primaryLight }]}>{user.plan}</Text>
+        <Animated.View style={[styles.planStoragePadFull, styles.splitPillContainerDropbox, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}> 
+          <View style={styles.splitPillRowDropbox}>
+            {/* Left: Label */}
+            <View style={styles.splitPillLeftDropbox}>
+              <Feather name="award" size={18} color="#fff" style={{ marginRight: 7 }} />
+              <Text style={styles.splitPillLabelTextDropbox}>Dropbox Basic</Text>
+            </View>
+            {/* Right: Upgrade */}
+            <TouchableOpacity
+              style={[
+                styles.splitPillRightDropbox,
+                { backgroundColor: theme.primary }
+              ]}
+              activeOpacity={0.85}
+              onPress={() => navigation.navigate('ManagePlan')}
+            >
+              <Text style={styles.splitPillUpgradeTextDropbox}>Upgrade</Text>
+              <Feather name="arrow-right" size={18} color="#111" style={{ marginLeft: 7 }} />
+            </TouchableOpacity>
           </View>
-          
-          {/* Circular Storage Progress */}
-          <View style={styles.storageCircleContainer}>
-            <View style={[styles.storageCircle, { borderColor: theme.secondaryDark }]}>
-              <View style={[styles.storageCircleFill, { 
-                borderTopColor: storagePercentage > 0.125 ? theme.primary : 'transparent',
-                borderRightColor: storagePercentage > 0.25 ? theme.primary : 'transparent',
-                borderBottomColor: storagePercentage > 0.375 ? theme.primary : 'transparent',
-                borderLeftColor: storagePercentage > 0.5 ? theme.primary : 'transparent',
-                transform: [{ rotate: '-90deg' }],
-              }]} />
-              <View style={[styles.storageCircleInner, { backgroundColor: theme.card }]}>
-                <Text style={[styles.storageUsedText, { color: theme.text }]}>4.0 MB</Text>
-                <Text style={[styles.storageTotalText, { color: theme.textSecondary }]}>of 2.0 GB</Text>
-                <Text style={[styles.storagePercentageText, { color: theme.primary }]}>
-                  {Math.round(storagePercentage * 100)}%
-                </Text>
-              </View>
+        </Animated.View>
+
+        {/* Feature Banner 2: After Plan/Storage Card */}
+        <View style={styles.featureBannerDropbox}>
+          <View style={styles.featureBannerImageWrapDropbox}>
+            <Image source={require('../assets/images/pngs/Eyes-bro.png')} style={styles.featureBannerImageDropbox} resizeMode="cover" />
+            <View style={styles.featureBannerTextOverlayDropbox}>
+              <Text style={styles.featureBannerTitleDropbox}>Privacy protection</Text>
             </View>
           </View>
-          
-          <TouchableOpacity style={[styles.upgradeBtnWide, { backgroundColor: theme.primary }]} activeOpacity={0.85} onPress={() => navigation.navigate('ManagePlan')}>
-            <Text style={[styles.upgradeBtnText, { color: theme.textInverse }]}>Upgrade</Text>
-          </TouchableOpacity>
-        </Animated.View>
+        </View>
+
         {/* Security Section */}
         <Animated.View style={[styles.sectionCard, { backgroundColor: theme.card, shadowColor: theme.shadow }, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}> 
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Security</Text>
@@ -169,6 +168,17 @@ export default function AccountScreen({ navigation }) {
             </TouchableOpacity>
           ))}
         </Animated.View>
+
+        {/* Feature Banner 3: After Security Section */}
+        <View style={styles.featureBannerDropbox}>
+          <View style={styles.featureBannerImageWrapDropbox}>
+            <Image source={require('../assets/images/pngs/Nerd-bro.png')} style={styles.featureBannerImageDropbox} resizeMode="cover" />
+            <View style={styles.featureBannerTextOverlayDropbox}>
+              <Text style={styles.featureBannerTitleDropbox}>24/7 support</Text>
+            </View>
+          </View>
+        </View>
+
         {/* Connected Apps Section */}
         <Animated.View style={[styles.sectionCard, { backgroundColor: theme.card, shadowColor: theme.shadow }, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}> 
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Connected apps</Text>
@@ -318,78 +328,22 @@ const styles = StyleSheet.create({
     elevation: 4,
     alignItems: 'center',
   },
-  planRow: {
+  planBadgeRowDropbox: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
-  },
-  planIcon: {
-    marginRight: 8,
-  },
-  planBadge: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  storageCircleContainer: {
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  storageCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 8,
-    alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
-  },
-  storageCircleFill: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
     width: '100%',
-    height: '100%',
-    borderRadius: 60,
-    borderWidth: 8,
-    borderColor: 'transparent',
-    borderTopColor: 'currentColor',
-    borderRightColor: 'currentColor',
-    transform: [{ rotate: '-90deg' }],
+    marginTop: 10,
+    marginBottom: 8,
+    gap: 8,
   },
-  storageCircleInner: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  storageUsedText: {
-    fontSize: 16,
+  planBadgeCenterDropbox: {
     fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  storageTotalText: {
-    fontSize: 12,
-    opacity: 0.8,
-  },
-  storagePercentageText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginTop: 4,
-  },
-  upgradeBtnWide: {
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 32,
-    marginTop: 4,
-  },
-  upgradeBtnText: {
-    fontWeight: 'bold',
-    fontSize: 15,
+    borderRadius: 32,
+    paddingHorizontal: 0,
+    paddingVertical: 22,
     textAlign: 'center',
+    minHeight: 64,
   },
   sectionCard: {
     borderRadius: 20,
@@ -495,5 +449,103 @@ const styles = StyleSheet.create({
   modalButtonText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  featureBannerDropbox: {
+    width: '100%',
+    marginBottom: 24,
+    paddingHorizontal: 0,
+    backgroundColor: 'transparent',
+  },
+  featureBannerImageWrapDropbox: {
+    width: '100%',
+    aspectRatio: 1.7,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  featureBannerImageDropbox: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 0,
+  },
+  featureBannerTextOverlayDropbox: {
+    position: 'absolute',
+    left: 0,
+    bottom: 0,
+    width: '100%',
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    backgroundColor: 'transparent',
+    alignItems: 'flex-start',
+  },
+  featureBannerTitleDropbox: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'left',
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.35)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 6,
+  },
+  planStoragePadFull: {
+    backgroundColor: 'transparent',
+    marginHorizontal: 0,
+    marginBottom: 24,
+    padding: 0,
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 0,
+  },
+  splitPillContainerDropbox: {
+    backgroundColor: 'transparent',
+    marginHorizontal: 0,
+    marginBottom: 24,
+    padding: 0,
+    shadowColor: '#23272f',
+    shadowOpacity: 0.10,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+    borderRadius: 40,
+  },
+  splitPillRowDropbox: {
+    flexDirection: 'row',
+    width: '100%',
+    alignItems: 'stretch',
+    overflow: 'hidden',
+    borderRadius: 40,
+  },
+  splitPillLeftDropbox: {
+    flex: 1.1,
+    backgroundColor: '#23272f',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    borderTopLeftRadius: 40,
+    borderBottomLeftRadius: 40,
+  },
+  splitPillLabelTextDropbox: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  splitPillRightDropbox: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    borderTopRightRadius: 40,
+    borderBottomRightRadius: 40,
+  },
+  splitPillUpgradeTextDropbox: {
+    color: '#111',
+    fontWeight: 'bold',
+    fontSize: 16,
+    letterSpacing: 0.2,
+    textAlign: 'left',
   },
 }); 
