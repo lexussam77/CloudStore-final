@@ -1,9 +1,9 @@
 package com.cloudstore.controller;
 
-import com.cloudstore.dto.FileResponse;
-import com.cloudstore.dto.RegisterCloudFileRequest;
 import com.cloudstore.dto.CompressionRequest;
 import com.cloudstore.dto.CompressionResponse;
+import com.cloudstore.dto.FileResponse;
+import com.cloudstore.dto.RegisterCloudFileRequest;
 import com.cloudstore.model.User;
 import com.cloudstore.service.FileService;
 import lombok.RequiredArgsConstructor;
@@ -135,13 +135,42 @@ public class FileController {
         return ResponseEntity.ok(response);
     }
 
-    // Compress a file (only if owned by user)
+    // Public download endpoint (no authentication required)
+    @GetMapping("/{id}/public-download")
+    public org.springframework.http.ResponseEntity<?> publicDownloadFile(@PathVariable Long id) throws java.io.IOException {
+        // Use a new method in FileService that does not require a user
+        var file = fileService.getFileById(id);
+        if (file == null) {
+            return org.springframework.http.ResponseEntity.notFound().build();
+        }
+        if (file.getUrl() != null && !file.getUrl().isEmpty()) {
+            // Redirect to cloud URL
+            return org.springframework.http.ResponseEntity.status(302)
+                .header("Location", file.getUrl())
+                .build();
+        } else {
+            // Serve local file bytes
+            byte[] data = fileService.downloadFile(id);
+            return org.springframework.http.ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"")
+                .body(data);
+        }
+    }
+
     @PostMapping("/{id}/compress")
     public ResponseEntity<CompressionResponse> compressFile(
             @AuthenticationPrincipal User user,
             @PathVariable Long id,
             @RequestBody CompressionRequest request) {
-        CompressionResponse response = fileService.compressFileByUser(user, id, request);
+        CompressionResponse response = fileService.compressFile(user, id, request);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/extract")
+    public ResponseEntity<List<FileResponse>> extractFile(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id) {
+        List<FileResponse> extracted = fileService.extractFile(user, id);
+        return ResponseEntity.ok(extracted);
     }
 } 

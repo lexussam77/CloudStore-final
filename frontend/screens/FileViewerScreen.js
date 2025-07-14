@@ -21,6 +21,7 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as MediaLibrary from 'expo-media-library';
 import { WebView } from 'react-native-webview';
+import { getDownloadUrl } from './api';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -37,6 +38,9 @@ export default function FileViewerScreen({ route, navigation }) {
   const [position, setPosition] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [fullscreen, setFullscreen] = useState(false);
+  const [pdfCache, setPdfCache] = useState(new Map()); // Cache for PDF data
+  const [pdfProgress, setPdfProgress] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
     determineFileType();
@@ -69,18 +73,27 @@ export default function FileViewerScreen({ route, navigation }) {
     }
 
     const extension = file.name.split('.').pop().toLowerCase();
+    console.log('=== FILE TYPE DETECTION ===');
+    console.log('File name:', file.name);
+    console.log('Extension:', extension);
     
     if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension)) {
+      console.log('Detected as: image');
       setFileType('image');
     } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(extension)) {
+      console.log('Detected as: video');
       setFileType('video');
     } else if (['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'].includes(extension)) {
+      console.log('Detected as: audio');
       setFileType('audio');
     } else if (extension === 'pdf') {
+      console.log('Detected as: PDF - Using enhanced PDF viewer');
       setFileType('pdf');
     } else if (['txt', 'md', 'json', 'xml', 'html', 'css', 'js', 'py', 'java', 'cpp', 'c', 'php'].includes(extension)) {
+      console.log('Detected as: text');
       setFileType('text');
     } else {
+      console.log('Detected as: unsupported');
       setFileType('unsupported');
     }
     
@@ -95,16 +108,75 @@ export default function FileViewerScreen({ route, navigation }) {
 
   const handleShare = async () => {
     try {
+      // Use the file's URL directly since files are stored on Cloudinary
+      const publicUrl = file.url;
+      
+      console.log('File object:', file);
+      console.log('Public URL for sharing:', publicUrl);
+      
+      if (!publicUrl) {
+        Alert.alert('Error', 'No shareable URL available for this file');
+        return;
+      }
+
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(file.url, {
-          mimeType: file.type || 'application/octet-stream',
-          dialogTitle: `Share ${file.name}`,
-        });
+        try {
+          // Always download the file to cache first since expo-sharing only supports local files
+          const fileName = file.name;
+          const fileExtension = fileName.includes('.') ? fileName.split('.').pop() : '';
+          const baseName = fileName.includes('.') ? fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
+          const uniqueFileName = `${baseName}_${Date.now()}${fileExtension ? '.' + fileExtension : ''}`;
+          
+          const cacheDir = FileSystem.cacheDirectory + 'Shares/';
+          const cacheFileUri = cacheDir + uniqueFileName;
+          
+          console.log('Cache directory:', cacheDir);
+          console.log('Cache file URI:', cacheFileUri);
+          console.log('File name:', fileName);
+          console.log('Unique file name:', uniqueFileName);
+          
+          const dirInfo = await FileSystem.getInfoAsync(cacheDir);
+          console.log('Directory exists:', dirInfo.exists);
+          
+          if (!dirInfo.exists) {
+            console.log('Creating directory...');
+            await FileSystem.makeDirectoryAsync(cacheDir, { intermediates: true });
+            console.log('Directory created successfully');
+          }
+          
+          console.log('Starting download from:', publicUrl);
+          console.log('Downloading to:', cacheFileUri);
+          
+          const downloadResult = await FileSystem.downloadAsync(publicUrl, cacheFileUri);
+          
+          console.log('Download result:', downloadResult);
+          console.log('Download status code:', downloadResult.statusCode);
+          console.log('Download status:', downloadResult.status);
+          
+          if (downloadResult.statusCode === 200 || downloadResult.status === 200) {
+            console.log('File downloaded successfully, sharing:', cacheFileUri);
+            await Sharing.shareAsync(cacheFileUri, {
+              mimeType: file.type || 'application/octet-stream',
+              dialogTitle: `Share ${file.name}`,
+            });
+          } else {
+            console.error('Download failed with status:', downloadResult.statusCode || downloadResult.status);
+            Alert.alert('Error', `Failed to download file for sharing. Status: ${downloadResult.statusCode || downloadResult.status}`);
+          }
+        } catch (downloadError) {
+          console.error('Download error for sharing:', downloadError);
+          console.error('Error message:', downloadError.message);
+          console.error('Error stack:', downloadError.stack);
+          Alert.alert('Error', 'Failed to prepare file for sharing: ' + downloadError.message);
+        }
       } else {
         Alert.alert('Sharing not available', 'Sharing is not available on this device');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to share file');
+      console.error('Share error:', error);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      Alert.alert('Error', 'Failed to share file: ' + error.message);
     }
   };
 
@@ -140,6 +212,53 @@ export default function FileViewerScreen({ route, navigation }) {
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to download file: ' + error.message);
+    }
+  };
+
+  // Test PDF functionality
+  const testPdfFunctionality = async () => {
+    try {
+      console.log('=== PDF FUNCTIONALITY TEST ===');
+      console.log('File URL:', file.url);
+      console.log('File name:', file.name);
+      console.log('File type:', fileType);
+      
+      // Test 1: Check if URL is accessible
+      const response = await fetch(file.url, {
+        method: 'HEAD',
+        headers: {
+          'Accept': 'application/pdf, */*'
+        }
+      });
+      
+      console.log('URL accessibility test:', {
+        status: response.status,
+        contentType: response.headers.get('content-type'),
+        contentLength: response.headers.get('content-length')
+      });
+      
+      // Test 2: Try to get actual PDF content
+      const pdfResponse = await fetch(file.url);
+      const arrayBuffer = await pdfResponse.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      
+      console.log('PDF content test:', {
+        size: uint8Array.length,
+        header: String.fromCharCode(...uint8Array.slice(0, 4)),
+        isPdf: String.fromCharCode(...uint8Array.slice(0, 4)) === '%PDF'
+      });
+      
+      Alert.alert(
+        'PDF Test Results', 
+        `✅ URL Access: ${response.status === 200 ? 'OK' : 'Failed'}\n` +
+        `📄 File Size: ${uint8Array.length} bytes\n` +
+        `🔍 PDF Header: ${String.fromCharCode(...uint8Array.slice(0, 4))}\n` +
+        `✅ Is PDF: ${String.fromCharCode(...uint8Array.slice(0, 4)) === '%PDF' ? 'Yes' : 'No'}`
+      );
+      
+    } catch (error) {
+      console.error('PDF test error:', error);
+      Alert.alert('PDF Test Error', error.message);
     }
   };
 
@@ -270,28 +389,184 @@ export default function FileViewerScreen({ route, navigation }) {
     </View>
   );
 
-  const renderPDF = () => (
-    <View style={styles.pdfContainer}>
-      <WebView
-        source={{ uri: file.url }}
-        style={styles.pdfViewer}
-        onLoad={() => setLoading(false)}
-        onError={() => {
-          setError('Failed to load PDF');
-          setLoading(false);
-        }}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        startInLoadingState={true}
-        renderLoading={() => (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#0061FF" />
-            <Text style={styles.loadingText}>Loading PDF...</Text>
-          </View>
-        )}
-      />
-    </View>
-  );
+  const renderPDF = () => {
+    console.log('=== ENHANCED PDF RENDERER ===');
+    console.log('PDF URL:', file.url);
+    console.log('File name:', file.name);
+    
+    // Enhanced HTML with PDF.js for better PDF viewing
+    const enhancedPdfHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+          <style>
+            body { margin: 0; padding: 0; background-color: #f5f5f5; font-family: Arial, sans-serif; overflow: hidden; }
+            .pdf-container { width: 100%; height: 100vh; display: flex; flex-direction: column; }
+            .pdf-header { background-color: #fff; padding: 15px; border-bottom: 1px solid #e0e0e0; text-align: center; font-weight: bold; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 1000; }
+            .pdf-controls { background-color: #fff; padding: 10px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: center; align-items: center; gap: 10px; z-index: 999; }
+            .control-btn { background-color: #0061FF; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; margin: 0 5px; }
+            .control-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+            .page-info { font-size: 14px; color: #666; margin: 0 15px; }
+            .pdf-viewer { flex: 1; width: 100%; background-color: #f5f5f5; overflow: auto; position: relative; }
+            .pdf-canvas { display: block; margin: 20px auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1); background-color: white; }
+            .loading-container { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; color: #666; }
+            .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #0061FF; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            .error-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; text-align: center; }
+            .error-message { color: #ef4444; margin: 20px 0; font-size: 16px; }
+            .fallback-button { background-color: #0061FF; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; margin: 10px; display: inline-block; border: none; cursor: pointer; font-size: 16px; }
+            .zoom-controls { display: flex; align-items: center; gap: 10px; }
+            .zoom-btn { background-color: #f0f0f0; border: 1px solid #ddd; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; }
+            .zoom-btn:hover { background-color: #e0e0e0; }
+          </style>
+        </head>
+        <body>
+          <div class="pdf-container">
+            <div class="pdf-header">${file.name}</div>
+            <div class="pdf-controls">
+              <button class="control-btn" onclick="previousPage()" id="prevBtn">Previous</button>
+              <span class="page-info" id="pageInfo">Page 1 of 1</span>
+              <button class="control-btn" onclick="nextPage()" id="nextBtn">Next</button>
+              <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomOut()">-</button>
+                <span id="zoomLevel">100%</span>
+                <button class="zoom-btn" onclick="zoomIn()">+</button>
+              </div>
+            </div>
+            <div class="pdf-viewer" id="pdfViewer">
+              <div class="loading-container" id="loadingContainer">
+                <div class="spinner"></div>
+                <div>Loading PDF...</div>
+              </div>
+            </div>
+          </div>
+          <script>
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            let pdfDoc = null;
+            let pageNum = 1;
+            let pageRendering = false;
+            let pageNumPending = null;
+            let scale = 1.0;
+            const scaleDelta = 0.25;
+            async function loadPDF() {
+              try {
+                const loadingTask = pdfjsLib.getDocument('${file.url}');
+                pdfDoc = await loadingTask.promise;
+                document.getElementById('pageInfo').textContent = \`Page 1 of \${'${pdfDoc.numPages}'}\`;
+                document.getElementById('prevBtn').disabled = true;
+                document.getElementById('nextBtn').disabled = pdfDoc.numPages <= 1;
+                renderPage(pageNum);
+                window.ReactNativeWebView.postMessage('pdfLoaded:' + pdfDoc.numPages);
+              } catch (error) {
+                showError('Failed to load PDF: ' + error.message);
+                window.ReactNativeWebView.postMessage('pdfError:' + error.message);
+              }
+            }
+            function renderPage(num) {
+              pageRendering = true;
+              pdfDoc.getPage(num).then(function(page) {
+                const viewport = page.getViewport({scale: scale});
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                canvas.className = 'pdf-canvas';
+                const renderContext = { canvasContext: ctx, viewport: viewport };
+                const renderTask = page.render(renderContext);
+                renderTask.promise.then(function() {
+                  pageRendering = false;
+                  const viewer = document.getElementById('pdfViewer');
+                  viewer.innerHTML = '';
+                  viewer.appendChild(canvas);
+                  document.getElementById('zoomLevel').textContent = Math.round(scale * 100) + '%';
+                  if (pageNumPending !== null) {
+                    renderPage(pageNumPending);
+                    pageNumPending = null;
+                  }
+                });
+              });
+            }
+            function queueRenderPage(num) {
+              if (pageRendering) {
+                pageNumPending = num;
+              } else {
+                renderPage(num);
+              }
+            }
+            function previousPage() {
+              if (pageNum <= 1) { return; }
+              pageNum--;
+              queueRenderPage(pageNum);
+              updatePageInfo();
+            }
+            function nextPage() {
+              if (pageNum >= pdfDoc.numPages) { return; }
+              pageNum++;
+              queueRenderPage(pageNum);
+              updatePageInfo();
+            }
+            function updatePageInfo() {
+              document.getElementById('pageInfo').textContent = \`Page \${'${pageNum}'} of \${'${pdfDoc.numPages}'}\`;
+              document.getElementById('prevBtn').disabled = pageNum <= 1;
+              document.getElementById('nextBtn').disabled = pageNum >= pdfDoc.numPages;
+            }
+            function zoomIn() { scale += scaleDelta; queueRenderPage(pageNum); }
+            function zoomOut() { if (scale > scaleDelta) { scale -= scaleDelta; queueRenderPage(pageNum); } }
+            function showError(message) {
+              const viewer = document.getElementById('pdfViewer');
+              viewer.innerHTML = \`<div class='error-container'><h2>PDF Viewer Error</h2><p class='error-message'>\${'${message}'}</p><p><strong>File:</strong> \${file.name}</p><p><strong>URL:</strong> \${file.url}</p><div style='margin-top: 20px;'><a href='\${file.url}' target='_blank' class='fallback-button'>Open in Browser</a><a href='\${file.url}' download='\${file.name}' class='fallback-button'>Download PDF</a></div></div>\`;
+            }
+            loadPDF();
+          </script>
+        </body>
+      </html>
+    `;
+    return (
+      <View style={styles.pdfContainer}>
+        <WebView
+          source={{ html: enhancedPdfHtml }}
+          style={styles.pdfViewer}
+          onLoadStart={() => {
+            setLoading(true);
+          }}
+          onLoadEnd={() => {
+            setLoading(false);
+          }}
+          onError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            setError('Failed to load PDF viewer');
+            setLoading(false);
+          }}
+          onMessage={(event) => {
+            const { data } = event.nativeEvent;
+            if (data.startsWith('pdfLoaded:')) {
+              const pageCount = parseInt(data.split(':')[1]);
+              setLoading(false);
+              setPdfProgress(100);
+              setTotalPages(pageCount);
+            } else if (data.startsWith('pdfError:')) {
+              const errorMsg = data.split(':')[1];
+              setError('PDF cannot be displayed: ' + errorMsg);
+              setLoading(false);
+            }
+          }}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          startInLoadingState={true}
+          allowsInlineMediaPlayback={true}
+          mediaPlaybackRequiresUserAction={false}
+          renderLoading={() => (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#0061FF" />
+              <Text style={styles.loadingText}>Loading PDF...</Text>
+            </View>
+          )}
+        />
+      </View>
+    );
+  };
 
   const [textContent, setTextContent] = useState('');
   const [textLoading, setTextLoading] = useState(false);
@@ -341,20 +616,31 @@ export default function FileViewerScreen({ route, navigation }) {
   );
 
   const renderContent = () => {
+    console.log('=== RENDER CONTENT ===');
+    console.log('File type:', fileType);
+    console.log('File name:', file.name);
+    
     switch (fileType) {
       case 'image':
+        console.log('Rendering: image');
         return renderImage();
       case 'video':
+        console.log('Rendering: video');
         return renderVideo();
       case 'audio':
+        console.log('Rendering: audio');
         return renderAudio();
       case 'pdf':
+        console.log('Rendering: PDF with local viewer');
         return renderPDF();
       case 'text':
+        console.log('Rendering: text');
         return renderText();
       case 'unsupported':
+        console.log('Rendering: unsupported');
         return renderUnsupported();
       default:
+        console.log('Rendering: default (null)');
         return null;
     }
   };
@@ -363,7 +649,19 @@ export default function FileViewerScreen({ route, navigation }) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0061FF" />
-        <Text style={styles.loadingText}>Loading file...</Text>
+        <Text style={styles.loadingText}>
+          {fileType === 'pdf' && totalPages > 0 
+            ? `Loading PDF... ${Math.round(pdfProgress)}% (Page ${Math.ceil(pdfProgress * totalPages / 100)} of ${totalPages})`
+            : 'Loading file...'
+          }
+        </Text>
+        {fileType === 'pdf' && totalPages > 0 && (
+          <View style={styles.progressBarContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${pdfProgress}%` }]} />
+            </View>
+          </View>
+        )}
       </View>
     );
   }
@@ -374,6 +672,13 @@ export default function FileViewerScreen({ route, navigation }) {
         <Feather name="alert-circle" size={80} color="#ef4444" />
         <Text style={styles.errorTitle}>Error Loading File</Text>
         <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity 
+          style={styles.downloadButton} 
+          onPress={testPdfFunctionality}
+        >
+          <Feather name="refresh-cw" size={20} color="#fff" />
+          <Text style={styles.downloadButtonText}>Test PDF Access</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.retryButton} onPress={() => navigation.goBack()}>
           <Text style={styles.retryButtonText}>Go Back</Text>
         </TouchableOpacity>
@@ -384,6 +689,28 @@ export default function FileViewerScreen({ route, navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
+      {/* Temporary debug button for PDF testing */}
+      {file.name && file.name.toLowerCase().includes('.pdf') && (
+        <TouchableOpacity 
+          style={{
+            position: 'absolute',
+            top: 50,
+            right: 20,
+            backgroundColor: '#0061FF',
+            padding: 10,
+            borderRadius: 5,
+            zIndex: 1000,
+          }}
+          onPress={() => {
+            console.log('Force PDF viewer button pressed');
+            setFileType('pdf');
+            setLoading(false);
+            setError(null);
+          }}
+        >
+          <Text style={{ color: 'white', fontSize: 12 }}>Force PDF</Text>
+        </TouchableOpacity>
+      )}
       {renderContent()}
     </SafeAreaView>
   );
@@ -409,21 +736,21 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
     padding: 20,
+    backgroundColor: '#f5f5f5',
   },
   errorTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
-    marginTop: 16,
-    marginBottom: 8,
+    color: '#ef4444',
+    marginTop: 20,
+    marginBottom: 10,
   },
   errorText: {
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   retryButton: {
     backgroundColor: '#0061FF',
@@ -575,16 +902,35 @@ const styles = StyleSheet.create({
   },
   downloadButton: {
     backgroundColor: '#0061FF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   downloadButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  progressBarContainer: {
+    width: '80%',
+    height: 8,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+    marginTop: 10,
+  },
+  progressBar: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#0061FF',
+    borderRadius: 4,
   },
 }); 

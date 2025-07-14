@@ -13,11 +13,4 @@ public class CompressionResponse {
     private Long compressedSize;
     private Double compressionRatio;
     private String format;
-    private String quality;
-    private String level;
-    private Boolean favourite;
-    private Boolean deleted;
-    private Long folderId;
-    private String createdAt;
-    private String updatedAt;
-} 
+}

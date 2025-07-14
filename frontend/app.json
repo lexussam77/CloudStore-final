@@ -20,7 +20,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "userInterfaceStyle": "dark"
+      "userInterfaceStyle": "dark",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app needs access to camera to scan documents."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -29,11 +32,24 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.lexus.cloudstore",
-      "userInterfaceStyle": "dark"
+      "userInterfaceStyle": "dark",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow CloudStore to access your camera to scan documents."
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "72a6d53e-f411-463b-b69c-7e67507e254d"

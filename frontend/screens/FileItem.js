@@ -6,7 +6,7 @@ import { useTheme } from '../theme/ThemeContext';
 function getFileIcon(name) {
   if (!name) return 'file-text';
   const ext = name.split('.').pop().toLowerCase();
-  if (['pdf'].includes(ext)) return 'file-text';
+  if (['pdf'].includes(ext)) return 'file-text'; // PDF icon - using file-text as it's close to PDF appearance
   if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return 'image';
   if (['doc', 'docx'].includes(ext)) return 'file';
   if (['xls', 'xlsx'].includes(ext)) return 'bar-chart-2';
@@ -47,17 +47,25 @@ export default function FileItem({ item, onMenuPress, onPress, onStarPress }) {
     onStarPress();
   };
 
-  const isImage = item.name && ['jpg', 'jpeg', 'png', 'gif'].includes(item.name.split('.').pop().toLowerCase());
+  // Determine if this is a compressed file
+  const isCompressed = item.name && item.name.includes('_compressed');
+  const isImage = item.name && ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(item.name.split('.').pop().toLowerCase());
+  const isVideo = item.name && ['mp4', 'mov', 'avi', 'webm', 'mkv'].includes(item.name.split('.').pop().toLowerCase());
   const isFavorited = item.favourite || item.favorites;
-  
+  // Choose vibrant color for compressed files
+  const compressedBg = isCompressed ? '#e0f2fe' : theme.secondaryLight;
+  const compressedIcon = isCompressed ? '#0ea5e9' : theme.primary;
   return (
     <Animated.View style={[styles.fileCardRow, { backgroundColor: theme.card, shadowColor: theme.shadow }, { opacity: fadeAnim }]}> 
       <TouchableOpacity style={[styles.fileCardRow, { backgroundColor: theme.card }]} onPress={onPress} activeOpacity={0.8}>
-        <View style={[styles.fileThumbWrap, { backgroundColor: theme.secondaryLight }]}>
+        <View style={[styles.fileThumbWrap, { backgroundColor: compressedBg }]}> 
+          {/* Show image or video thumbnail for compressed files, just like normal uploads */}
           {isImage && item.url ? (
             <Image source={{ uri: item.url }} style={styles.fileThumbImg} />
+          ) : isVideo && item.url ? (
+            <Feather name="film" size={32} color={compressedIcon} />
           ) : (
-            <Feather name={getFileIcon(item.name)} size={32} color={theme.primary} />
+            <Feather name={getFileIcon(item.name)} size={32} color={compressedIcon} />
           )}
         </View>
         <View style={{ flex: 1, marginLeft: 12 }}>

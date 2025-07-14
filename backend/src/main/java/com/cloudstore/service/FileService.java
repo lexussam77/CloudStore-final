@@ -1,9 +1,9 @@
 package com.cloudstore.service;
 
-import com.cloudstore.dto.FileResponse;
-import com.cloudstore.dto.RenameFileRequest;
 import com.cloudstore.dto.CompressionRequest;
 import com.cloudstore.dto.CompressionResponse;
+import com.cloudstore.dto.FileResponse;
+import com.cloudstore.dto.RenameFileRequest;
 import com.cloudstore.model.File;
 import com.cloudstore.model.Folder;
 import com.cloudstore.model.User;
@@ -25,6 +25,10 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 
 @Service
 @RequiredArgsConstructor
@@ -345,100 +349,150 @@ public class FileService {
         return toResponse(savedFile);
     }
 
-    @Transactional
-    public CompressionResponse compressFileByUser(User user, Long fileId, CompressionRequest request) {
+    public File getFileById(Long id) {
+        return fileRepository.findById(id)
+            .filter(file -> !file.isDeleted()) // Only return non-deleted files
+            .orElse(null);
+    }
+
+    public CompressionResponse compressFile(User user, Long fileId, CompressionRequest request) {
+        // 1. Find the file
         File originalFile = fileRepository.findByIdAndUser(fileId, user)
                 .orElseThrow(() -> new RuntimeException("File not found"));
-        
+        String originalName = originalFile.getName();
+        String extension = originalName.contains(".") ? originalName.substring(originalName.lastIndexOf('.') + 1).toLowerCase() : "";
+        String type = request.getType();
         try {
-            // Download the original file
             byte[] fileData = downloadFileByUser(user, fileId);
-            
-            // Generate compressed file name
-            String originalName = originalFile.getName();
-            String baseName = originalName.contains(".") ? 
-                originalName.substring(0, originalName.lastIndexOf('.')) : originalName;
-            String compressedName = baseName + "_compressed." + request.getFormat();
-            
-            // Compress the file based on format
-            byte[] compressedData = compressFileData(fileData, request);
-            
-            // Upload compressed file to Cloudinary
-            String compressedUrl = uploadToCloudinary(compressedData, compressedName, request.getFormat());
-            
-            // Calculate compression ratio
-            double compressionRatio = ((double) (originalFile.getSize() - compressedData.length) / originalFile.getSize()) * 100;
-            
-            // Save compressed file to database
+            byte[] compressedData;
+            String compressedName;
+            String format = request.getFormat();
+            float quality = request.getQuality() != null ? request.getQuality() : 0.7f;
+            int bitrate = request.getBitrate() != null ? request.getBitrate() : 1000; // kbps default
+            // 2. Handle by type
+            if ("image".equalsIgnoreCase(type)) {
+                // Use Thumbnailator for JPEG/PNG/WebP
+                String usedFormat = (format != null && !format.isEmpty()) ? format : extension;
+                if (!originalName.toLowerCase().endsWith("." + usedFormat)) {
+                    compressedName = originalName.replaceFirst("\\.[^.]+$", "_compressed." + usedFormat);
+                } else {
+                    compressedName = originalName.replaceFirst("\\.[^.]+$", "_compressed." + usedFormat);
+                }
+                java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(fileData);
+                java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                net.coobird.thumbnailator.Thumbnails.of(bais)
+                    .scale(1.0)
+                    .outputQuality(quality)
+                    .outputFormat(usedFormat)
+                    .toOutputStream(baos);
+                compressedData = baos.toByteArray();
+                format = usedFormat;
+            } else if ("video".equalsIgnoreCase(type)) {
+                // Use ffmpeg for video compression
+                String usedFormat = (format != null && !format.isEmpty()) ? format : extension;
+                compressedName = originalName.replaceFirst("\\.[^.]+$", "_compressed." + usedFormat);
+                java.nio.file.Path tempInput = java.nio.file.Files.createTempFile("video_input", "." + extension);
+                java.nio.file.Path tempOutput = java.nio.file.Files.createTempFile("video_output", "." + usedFormat);
+                java.nio.file.Files.write(tempInput, fileData);
+                String bitrateStr = bitrate + "k";
+                ProcessBuilder pb = new ProcessBuilder(
+                    "ffmpeg", "-y", "-i", tempInput.toString(), "-b:v", bitrateStr, tempOutput.toString()
+                );
+                pb.redirectErrorStream(true);
+                Process process = pb.start();
+                process.waitFor();
+                compressedData = java.nio.file.Files.readAllBytes(tempOutput);
+                java.nio.file.Files.deleteIfExists(tempInput);
+                java.nio.file.Files.deleteIfExists(tempOutput);
+                format = usedFormat;
+            } else if ("archive".equalsIgnoreCase(type)) {
+                // Use Java zip for archiving
+                compressedName = originalName.replaceFirst("\\.[^.]+$", "_compressed.zip");
+                java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(baos);
+                zos.putNextEntry(new java.util.zip.ZipEntry(originalName));
+                zos.write(fileData);
+                zos.closeEntry();
+                zos.close();
+                compressedData = baos.toByteArray();
+                format = "zip";
+            } else {
+                throw new RuntimeException("Unsupported compression type");
+            }
+            // 3. Register new file (simulate upload, just store URL as dummy)
+            // Ensure the URL and name have the correct extension
+            String compressedUrl = "https://dummy.cloudstore.com/" + compressedName;
             File compressedFile = File.builder()
                     .user(user)
                     .name(compressedName)
-                    .path("cloud://" + compressedUrl)
                     .url(compressedUrl)
                     .size((long) compressedData.length)
                     .favourite(false)
                     .deleted(false)
                     .folder(originalFile.getFolder())
+                    .path(originalFile.getPath() != null ? originalFile.getPath() + "_compressed" : "cloud://" + compressedUrl)
                     .build();
-            
-            File savedCompressedFile = fileRepository.save(compressedFile);
-            
-            // Return compression response
+            fileRepository.save(compressedFile);
+            double compressionRatio = ((double) (originalFile.getSize() - compressedData.length) / originalFile.getSize()) * 100;
             return CompressionResponse.builder()
-                    .id(savedCompressedFile.getId())
-                    .name(savedCompressedFile.getName())
-                    .url(savedCompressedFile.getUrl())
+                    .id(compressedFile.getId())
+                    .name(compressedFile.getName())
+                    .url(compressedFile.getUrl())
                     .originalSize(originalFile.getSize())
-                    .compressedSize(savedCompressedFile.getSize())
+                    .compressedSize(compressedFile.getSize())
                     .compressionRatio(compressionRatio)
-                    .format(request.getFormat())
-                    .quality(request.getQuality())
-                    .level(request.getLevel())
-                    .favourite(savedCompressedFile.isFavourite())
-                    .deleted(savedCompressedFile.isDeleted())
-                    .folderId(savedCompressedFile.getFolder() != null ? savedCompressedFile.getFolder().getId() : null)
-                    .createdAt(savedCompressedFile.getCreatedAt().toString())
-                    .updatedAt(savedCompressedFile.getUpdatedAt().toString())
+                    .format(format)
                     .build();
-                    
         } catch (Exception e) {
-            throw new RuntimeException("Failed to compress file: " + e.getMessage());
+            throw new RuntimeException("Compression failed: " + e.getMessage());
         }
     }
 
-    private byte[] compressFileData(byte[] data, CompressionRequest request) {
-        // Simple compression implementation
-        // In a real application, you would use proper compression libraries
-        // For now, we'll simulate compression by reducing the data size
-        
-        int compressionFactor = getCompressionFactor(request.getQuality(), request.getLevel());
-        int newSize = Math.max(1, data.length / compressionFactor);
-        
-        byte[] compressed = new byte[newSize];
-        System.arraycopy(data, 0, compressed, 0, newSize);
-        
-        return compressed;
-    }
-
-    private int getCompressionFactor(String quality, String level) {
-        int qualityFactor = switch (quality.toLowerCase()) {
-            case "low" -> 4;
-            case "high" -> 2;
-            default -> 3; // medium
-        };
-        
-        int levelFactor = switch (level.toLowerCase()) {
-            case "fast" -> 2;
-            case "maximum" -> 5;
-            default -> 3; // balanced
-        };
-        
-        return qualityFactor + levelFactor;
-    }
-
-    private String uploadToCloudinary(byte[] data, String fileName, String format) {
-        // In a real implementation, you would upload to Cloudinary
-        // For now, we'll return a dummy URL
-        return "https://res.cloudinary.com/ds5gugfv0/raw/upload/v1/compressed/" + fileName;
+    @Transactional
+    public List<FileResponse> extractFile(User user, Long fileId) {
+        File compressedFile = fileRepository.findByIdAndUser(fileId, user)
+                .orElseThrow(() -> new RuntimeException("File not found"));
+        String name = compressedFile.getName();
+        String extension = name.contains(".") ? name.substring(name.lastIndexOf('.') + 1).toLowerCase() : "";
+        List<FileResponse> extractedFiles = new java.util.ArrayList<>();
+        try {
+            if (name.contains("_compressed")) {
+                // Simulate restoring the original file by removing '_compressed' from the name and URL
+                String originalName = name.replace("_compressed", "");
+                String originalUrl = compressedFile.getUrl().replace("_compressed", "");
+                File restored = File.builder()
+                        .user(user)
+                        .name(originalName)
+                        .url(originalUrl)
+                        .size(compressedFile.getSize())
+                        .favourite(false)
+                        .deleted(false)
+                        .folder(compressedFile.getFolder())
+                        .path(compressedFile.getPath() != null ? compressedFile.getPath().replace("_compressed", "") : "cloud://" + originalUrl)
+                        .build();
+                fileRepository.save(restored);
+                extractedFiles.add(toResponse(restored));
+            } else if (extension.equals("zip") || extension.equals("rar") || extension.equals("7z")) {
+                // Simulate extracting archive (fallback)
+                String extractedName = name.replace("_compressed." + extension, "");
+                File extracted = File.builder()
+                        .user(user)
+                        .name(extractedName)
+                        .url("https://dummy.cloudstore.com/" + extractedName)
+                        .size(compressedFile.getSize())
+                        .favourite(false)
+                        .deleted(false)
+                        .folder(compressedFile.getFolder())
+                        .path(compressedFile.getPath() + "_extracted")
+                        .build();
+                fileRepository.save(extracted);
+                extractedFiles.add(toResponse(extracted));
+            } else {
+                throw new RuntimeException("File is not a supported compressed/archived file");
+            }
+            return extractedFiles;
+        } catch (Exception e) {
+            throw new RuntimeException("Extraction failed: " + e.getMessage());
+        }
     }
 } 

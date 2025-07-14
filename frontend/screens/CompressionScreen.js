@@ -1,30 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal, ActivityIndicator, RefreshControl } from 'react-native';
-import { listFiles, compressFile } from './api';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal, ActivityIndicator, RefreshControl, Image } from 'react-native';
+import { listFiles, compressFile, extractFile, deleteFile } from './api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Feather from 'react-native-vector-icons/Feather';
 import FileItem from './FileItem';
 import { useTheme } from '../theme/ThemeContext';
+import { useNavigation } from '@react-navigation/native';
+import ExpertsBro from '../assets/images/pngs/Experts-bro.png';
+import HappyStudentBro from '../assets/images/pngs/Happy student-bro.png';
 
 export default function CompressionScreen() {
   const { theme } = useTheme();
   const [files, setFiles] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [compressing, setCompressing] = useState(false);
-  const [showBatchModal, setShowBatchModal] = useState(false);
-  const [batchSettings, setBatchSettings] = useState({
-    quality: 'medium',
-    format: 'zip',
-    level: 'balanced'
-  });
-  const [compressionStats, setCompressionStats] = useState({
-    totalFiles: 0,
-    compressedFiles: 0,
-    totalSpaceSaved: 0,
-    averageCompressionRatio: 0
-  });
   const [refreshing, setRefreshing] = useState(false);
+  const [showOptionsModal, setShowOptionsModal] = useState(false);
+  const [compressionSettings, setCompressionSettings] = useState({
+    quality: 'medium', // for images/videos
+    format: 'jpeg',    // for images, or 'mp4' for videos, or 'zip' for others
+    bitrate: 'medium', // for videos
+    archiveFormat: 'zip', // for others
+  });
+  const [compressing, setCompressing] = useState(false);
+  const [compressionResults, setCompressionResults] = useState([]);
+  const navigation = useNavigation();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     fetchFiles();
@@ -38,28 +42,12 @@ export default function CompressionScreen() {
       const res = await listFiles(token);
       if (res.success) {
         setFiles(res.data);
-        calculateStats(res.data);
       }
     } catch (err) {
       console.error('Error fetching files:', err);
     } finally {
       setLoading(false);
     }
-  };
-
-  const calculateStats = (fileList) => {
-    const compressedFiles = fileList.filter(file => file.name.includes('_compressed'));
-    const totalSpaceSaved = compressedFiles.reduce((total, file) => {
-      // This would need to be calculated from original vs compressed size
-      return total + (file.size || 0);
-    }, 0);
-
-    setCompressionStats({
-      totalFiles: fileList.length,
-      compressedFiles: compressedFiles.length,
-      totalSpaceSaved,
-      averageCompressionRatio: compressedFiles.length > 0 ? 60 : 0 // Placeholder
-    });
   };
 
   const refreshFiles = async () => {
@@ -76,52 +64,6 @@ export default function CompressionScreen() {
     );
   };
 
-  const handleBatchCompress = async () => {
-    if (selectedFiles.length === 0) {
-      Alert.alert('No Files Selected', 'Please select files to compress');
-      return;
-    }
-
-    setCompressing(true);
-    try {
-      const token = await AsyncStorage.getItem('jwt');
-      if (!token) {
-        Alert.alert('Error', 'Authentication required');
-        return;
-      }
-
-      let successCount = 0;
-      let totalCompressionRatio = 0;
-
-      for (const fileId of selectedFiles) {
-        try {
-          const res = await compressFile(token, fileId, batchSettings);
-          if (res.success) {
-            successCount++;
-            totalCompressionRatio += res.data.compressionRatio || 60;
-          }
-        } catch (err) {
-          console.error(`Error compressing file ${fileId}:`, err);
-        }
-      }
-
-      setShowBatchModal(false);
-      setSelectedFiles([]);
-      
-      const avgRatio = successCount > 0 ? Math.round(totalCompressionRatio / successCount) : 0;
-      Alert.alert(
-        'Batch Compression Complete',
-        `Successfully compressed ${successCount} out of ${selectedFiles.length} files.\nAverage compression: ${avgRatio}%`
-      );
-      
-      await fetchFiles();
-    } catch (err) {
-      Alert.alert('Error', 'Failed to compress files');
-    } finally {
-      setCompressing(false);
-    }
-  };
-
   const handleStarPress = async (item) => {
     // This would handle favoriting files
     console.log('Star pressed for:', item.name);
@@ -131,6 +73,216 @@ export default function CompressionScreen() {
     // This would show individual file menu
     console.log('Menu pressed for:', item.name);
   };
+
+  // Helper to check if a file is image or video
+  const isImageOrVideo = (file) => {
+    if (!file || !file.name) return false;
+    const ext = file.name.split('.').pop().toLowerCase();
+    return [
+      'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', // images
+      'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv' // videos
+    ].includes(ext);
+  };
+
+  // Helper to check file type
+  const getFileType = (file) => {
+    if (!file || !file.name) return 'other';
+    const ext = file.name.split('.').pop().toLowerCase();
+    if ([ 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp' ].includes(ext)) return 'image';
+    if ([ 'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv' ].includes(ext)) return 'video';
+    return 'other';
+  };
+
+  // Filtering for compressed files: only show files with '_compressed' in the name
+  const compressedFiles = files.filter(f => f.name && f.name.includes('_compressed'));
+  // Filtering for non-compressed files: only show files without '_compressed' in the name
+  const nonCompressedFiles = files.filter(f => !f.name || !f.name.includes('_compressed'));
+
+  // Determine selected file types
+  const selectedFileObjs = files.filter(f => selectedFiles.includes(f.id));
+  const selectedTypes = Array.from(new Set(selectedFileObjs.map(getFileType)));
+  const isMixed = selectedTypes.length > 1;
+  const onlyImages = selectedTypes.length === 1 && selectedTypes[0] === 'image';
+  const onlyVideos = selectedTypes.length === 1 && selectedTypes[0] === 'video';
+  const onlyOthers = selectedTypes.length === 1 && selectedTypes[0] === 'other';
+
+  // Compression options UI
+  const renderCompressionOptions = () => {
+    if (isMixed) {
+      // Only allow archiving for mixed types
+      return (
+        <View style={styles.settingGroup}>
+          <Text style={[styles.settingLabel, { color: theme.text }]}>Archive Format</Text>
+          <View style={styles.settingOptions}>
+            {['zip', 'rar', '7z'].map(fmt => (
+              <TouchableOpacity
+                key={fmt}
+                style={[styles.settingOption, compressionSettings.archiveFormat === fmt && [styles.settingOptionSelected, { borderColor: theme.primary, backgroundColor: theme.primaryLight }]]}
+                onPress={() => setCompressionSettings(s => ({ ...s, archiveFormat: fmt }))}
+              >
+                <Text style={[styles.settingOptionText, compressionSettings.archiveFormat === fmt && [styles.settingOptionTextSelected, { color: theme.primary }]]}>{fmt.toUpperCase()}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      );
+    }
+    if (onlyImages) {
+      return (
+        <>
+          <View style={styles.settingGroup}>
+            <Text style={[styles.settingLabel, { color: theme.text }]}>Image Quality</Text>
+            <View style={styles.settingOptions}>
+              {['low', 'medium', 'high'].map(q => (
+                <TouchableOpacity
+                  key={q}
+                  style={[styles.settingOption, compressionSettings.quality === q && [styles.settingOptionSelected, { borderColor: theme.primary, backgroundColor: theme.primaryLight }]]}
+                  onPress={() => setCompressionSettings(s => ({ ...s, quality: q }))}
+                >
+                  <Text style={[styles.settingOptionText, compressionSettings.quality === q && [styles.settingOptionTextSelected, { color: theme.primary }]]}>{q.charAt(0).toUpperCase() + q.slice(1)}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+          <View style={styles.settingGroup}>
+            <Text style={[styles.settingLabel, { color: theme.text }]}>Format</Text>
+            <View style={styles.settingOptions}>
+              {['jpeg', 'png', 'webp'].map(fmt => (
+                <TouchableOpacity
+                  key={fmt}
+                  style={[styles.settingOption, compressionSettings.format === fmt && [styles.settingOptionSelected, { borderColor: theme.primary, backgroundColor: theme.primaryLight }]]}
+                  onPress={() => setCompressionSettings(s => ({ ...s, format: fmt }))}
+                >
+                  <Text style={[styles.settingOptionText, compressionSettings.format === fmt && [styles.settingOptionTextSelected, { color: theme.primary }]]}>{fmt.toUpperCase()}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </>
+      );
+    }
+    if (onlyVideos) {
+      return (
+        <>
+          <View style={styles.settingGroup}>
+            <Text style={[styles.settingLabel, { color: theme.text }]}>Video Quality</Text>
+            <View style={styles.settingOptions}>
+              {['low', 'medium', 'high'].map(q => (
+                <TouchableOpacity
+                  key={q}
+                  style={[styles.settingOption, compressionSettings.quality === q && [styles.settingOptionSelected, { borderColor: theme.primary, backgroundColor: theme.primaryLight }]]}
+                  onPress={() => setCompressionSettings(s => ({ ...s, quality: q }))}
+                >
+                  <Text style={[styles.settingOptionText, compressionSettings.quality === q && [styles.settingOptionTextSelected, { color: theme.primary }]]}>{q.charAt(0).toUpperCase() + q.slice(1)}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+          <View style={styles.settingGroup}>
+            <Text style={[styles.settingLabel, { color: theme.text }]}>Format</Text>
+            <View style={styles.settingOptions}>
+              {['mp4', 'webm'].map(fmt => (
+                <TouchableOpacity
+                  key={fmt}
+                  style={[styles.settingOption, compressionSettings.format === fmt && [styles.settingOptionSelected, { borderColor: theme.primary, backgroundColor: theme.primaryLight }]]}
+                  onPress={() => setCompressionSettings(s => ({ ...s, format: fmt }))}
+                >
+                  <Text style={[styles.settingOptionText, compressionSettings.format === fmt && [styles.settingOptionTextSelected, { color: theme.primary }]]}>{fmt.toUpperCase()}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </>
+      );
+    }
+    if (onlyOthers) {
+      return (
+        <View style={styles.settingGroup}>
+          <Text style={[styles.settingLabel, { color: theme.text }]}>Archive Format</Text>
+          <View style={styles.settingOptions}>
+            {['zip', 'rar', '7z'].map(fmt => (
+              <TouchableOpacity
+                key={fmt}
+                style={[styles.settingOption, compressionSettings.archiveFormat === fmt && [styles.settingOptionSelected, { borderColor: theme.primary, backgroundColor: theme.primaryLight }]]}
+                onPress={() => setCompressionSettings(s => ({ ...s, archiveFormat: fmt }))}
+              >
+                <Text style={[styles.settingOptionText, compressionSettings.archiveFormat === fmt && [styles.settingOptionTextSelected, { color: theme.primary }]]}>{fmt.toUpperCase()}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      );
+    }
+    return null;
+  };
+
+  // Handle compress action
+  const handleCompress = async () => {
+    setCompressing(true);
+    setCompressionResults([]);
+    const token = await AsyncStorage.getItem('jwt');
+    const results = [];
+    let anySuccess = false;
+    const qualityMap = { low: 0.3, medium: 0.6, high: 0.9 };
+    for (const file of selectedFileObjs) {
+      let dto = {};
+      const type = getFileType(file);
+      if (type === 'image') {
+        dto = { type: 'image', quality: qualityMap[compressionSettings.quality], format: compressionSettings.format };
+      } else if (type === 'video') {
+        dto = { type: 'video', quality: qualityMap[compressionSettings.quality], format: compressionSettings.format };
+      } else {
+        dto = { type: 'archive', format: compressionSettings.archiveFormat };
+      }
+      try {
+        const res = await compressFile(token, file.id, dto);
+        results.push({ file, success: res.success, error: res.error });
+        if (res.success) {
+          anySuccess = true;
+          // Delete the original file after successful compression
+          await deleteFile(token, file.id);
+        }
+      } catch (err) {
+        results.push({ file, success: false, error: err.message });
+      }
+    }
+    console.log('Compression results:', results);
+    setCompressionResults(results);
+    setCompressing(false);
+    setShowOptionsModal(false);
+    await fetchFiles();
+    if (anySuccess) {
+      setSuccessMessage('File(s) compressed successfully!');
+      setShowSuccessModal(true);
+      setTimeout(() => {
+        setShowSuccessModal(false);
+        if (navigation.canGoBack()) {
+          navigation.goBack();
+        } // else do nothing
+      }, 1500);
+    } else {
+      setErrorMessage('Compression failed for all selected files.');
+      setShowErrorModal(true);
+    }
+  };
+
+  // --- Analytics/Stats ---
+  // Calculate stats
+  const totalFiles = files.length;
+  const compressedFilesCount = compressedFiles.length;
+  const totalSize = files.reduce((sum, f) => sum + (f.size || 0), 0);
+  const compressedSize = compressedFiles.reduce((sum, f) => sum + (f.size || 0), 0);
+  const estimatedOriginalSize = compressedFilesCount > 0 ? compressedSize * 1.5 : 0; // crude estimate
+  const spaceSaved = estimatedOriginalSize > 0 ? estimatedOriginalSize - compressedSize : 0;
+
+  // Format bytes
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
 
   if (loading) {
     return (
@@ -142,81 +294,109 @@ export default function CompressionScreen() {
   }
 
   return (
-    <ScrollView 
-      style={[styles.container, { backgroundColor: theme.background }]}
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}
+      contentContainerStyle={{ paddingBottom: 40 }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={refreshFiles} />
       }
     >
-      {/* Compression Statistics */}
-      <View style={[styles.statsContainer, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
-        <Text style={[styles.statsTitle, { color: theme.text }]}>Compression Overview</Text>
+      {/* Feature Banner Image */}
+      <View style={{ alignItems: 'center', marginTop: 12, marginBottom: 8 }}>
+        <Image source={ExpertsBro} style={{ width: 220, height: 140, borderRadius: 18 }} resizeMode="cover" />
+      </View>
+      {/* Analytics/Stats Section */}
+      <View style={[styles.statsContainer, { backgroundColor: theme.card, shadowColor: theme.shadow }]}> 
+        <Text style={[styles.statsTitle, { color: theme.text }]}>Your Cloud Analytics</Text>
         <View style={styles.statsGrid}>
-          <View style={[styles.statCard, { backgroundColor: theme.secondaryDark }]}>
-            <Feather name="file" size={24} color={theme.primary} />
-            <Text style={[styles.statNumber, { color: theme.text }]}>{compressionStats.totalFiles}</Text>
+          <View style={[styles.statCard, { backgroundColor: theme.secondaryLight }]}> 
+            <Feather name="file" size={28} color="#2563eb" />
+            <Text style={[styles.statNumber, { color: theme.text }]}>{totalFiles}</Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total Files</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: theme.secondaryDark }]}>
-            <Feather name="package" size={24} color="#10b981" />
-            <Text style={[styles.statNumber, { color: theme.text }]}>{compressionStats.compressedFiles}</Text>
-            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Compressed</Text>
+          <View style={[styles.statCard, { backgroundColor: theme.secondaryLight }]}> 
+            <Feather name="archive" size={28} color="#22c55e" />
+            <Text style={[styles.statNumber, { color: theme.text }]}>{compressedFilesCount}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Compressed Files</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: theme.secondaryDark }]}>
-            <Feather name="hard-drive" size={24} color="#f59e0b" />
-            <Text style={[styles.statNumber, { color: theme.text }]}>{Math.round(compressionStats.totalSpaceSaved / 1024 / 1024)}MB</Text>
-            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Space Saved</Text>
+          <View style={[styles.statCard, { backgroundColor: theme.secondaryLight }]}> 
+            <Feather name="database" size={28} color="#a21caf" />
+            <Text style={[styles.statNumber, { color: theme.text }]}>{formatBytes(totalSize)}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total Storage</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: theme.secondaryDark }]}>
-            <Feather name="trending-down" size={24} color="#ef4444" />
-            <Text style={[styles.statNumber, { color: theme.text }]}>{compressionStats.averageCompressionRatio}%</Text>
-            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Avg. Reduction</Text>
+          <View style={[styles.statCard, { backgroundColor: theme.secondaryLight }]}> 
+            <Feather name="trending-down" size={28} color="#f59e42" />
+            <Text style={[styles.statNumber, { color: theme.text }]}>{formatBytes(spaceSaved)}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Est. Space Saved</Text>
           </View>
         </View>
       </View>
-
-      {/* Batch Compression Section */}
-      <View style={[styles.section, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Batch Compression</Text>
-          <TouchableOpacity 
-            style={[
-              styles.batchButton, 
-              { backgroundColor: theme.secondaryDark },
-              selectedFiles.length > 0 && [styles.batchButtonActive, { backgroundColor: theme.primary }]
-            ]}
-            onPress={() => setShowBatchModal(true)}
-            disabled={selectedFiles.length === 0}
-          >
-            <Feather name="package" size={20} color={theme.textInverse} />
-            <Text style={[styles.batchButtonText, { color: theme.textInverse }]}>
-              Compress Selected ({selectedFiles.length})
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
-          Select multiple files to compress them together with the same settings
-        </Text>
+      <View style={{ height: 18 }} />
+      {/* Section Divider */}
+      <View style={{ height: 1, backgroundColor: theme.border, marginHorizontal: 24, marginBottom: 18, opacity: 0.18, borderRadius: 1 }} />
+      {/* Compressed Files Section */}
+      <View style={[styles.section, { backgroundColor: theme.card, shadowColor: theme.shadow }]}> 
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Compressed Files</Text>
+        {compressedFiles.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Feather name="archive" size={48} color={theme.textSecondary} />
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No compressed files available</Text>
+          </View>
+        ) : (
+          compressedFiles.map((file, index) => (
+            <View key={file.id || index} style={{ marginBottom: 8 }}>
+              <FileItem
+                item={file}
+                onPress={() => {}}
+                onMenuPress={() => handleMenuPress(file)}
+                onStarPress={() => handleStarPress(file)}
+              />
+              <TouchableOpacity
+                style={{ alignSelf: 'flex-end', marginRight: 24, marginTop: 2, backgroundColor: '#22c55e', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 6 }}
+                onPress={async () => {
+                  const token = await AsyncStorage.getItem('jwt');
+                  setCompressing(true);
+                  try {
+                    const res = await extractFile(token, file.id);
+                    if (res.success) {
+                      setSuccessMessage('File extracted successfully!');
+                      setShowSuccessModal(true);
+                      await fetchFiles();
+                      setTimeout(() => {
+                        setShowSuccessModal(false);
+                      }, 1500);
+                    } else {
+                      setErrorMessage(res.error || 'Extraction failed');
+                      setShowErrorModal(true);
+                    }
+                  } catch (err) {
+                    setErrorMessage(err.message || 'Extraction failed');
+                    setShowErrorModal(true);
+                  }
+                  setCompressing(false);
+                }}
+                disabled={compressing}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Extract</Text>
+              </TouchableOpacity>
+            </View>
+          ))
+        )}
       </View>
-
-      {/* Files List */}
-      <View style={[styles.section, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
+      {/* All Files Section (non-compressed) */}
+      <View style={[styles.section, { backgroundColor: theme.card, shadowColor: theme.shadow }]}> 
         <Text style={[styles.sectionTitle, { color: theme.text }]}>All Files</Text>
-        {files.length === 0 ? (
+        {nonCompressedFiles.length === 0 ? (
           <View style={styles.emptyState}>
             <Feather name="file" size={48} color={theme.textSecondary} />
             <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No files available for compression</Text>
           </View>
         ) : (
-          files.map((file, index) => (
+          nonCompressedFiles.map((file, index) => (
             <TouchableOpacity
               key={file.id || index}
-              style={[
-                styles.fileItem,
-                { backgroundColor: theme.card, borderColor: 'transparent' },
-                selectedFiles.includes(file.id) && [styles.fileItemSelected, { borderColor: theme.primary, backgroundColor: theme.primaryLight }]
-              ]}
+              style={styles.fileItem}
               onPress={() => toggleFileSelection(file.id)}
+              onLongPress={() => { setShowOptionsModal(true); }}
             >
               <View style={styles.fileItemContent}>
                 <FileItem
@@ -226,7 +406,7 @@ export default function CompressionScreen() {
                   onStarPress={() => handleStarPress(file)}
                 />
                 {selectedFiles.includes(file.id) && (
-                  <View style={[styles.selectionIndicator, { backgroundColor: theme.card }]}>
+                  <View style={[styles.selectionIndicator, { backgroundColor: theme.card }]}> 
                     <Feather name="check-circle" size={20} color={theme.primary} />
                   </View>
                 )}
@@ -234,128 +414,82 @@ export default function CompressionScreen() {
             </TouchableOpacity>
           ))
         )}
+        {/* Compress Button */}
+        {selectedFiles.length > 0 && (
+          <TouchableOpacity
+            style={[styles.batchButton, { backgroundColor: theme.primary, marginTop: 16 }]}
+            onPress={() => setShowOptionsModal(true)}
+            disabled={compressing}
+          >
+            <Feather name="archive" size={20} color={theme.textInverse} />
+            <Text style={[styles.batchButtonText, { color: theme.textInverse }]}>Compress Selected</Text>
+          </TouchableOpacity>
+        )}
       </View>
-
-      {/* Batch Compression Modal */}
-      <Modal
-        visible={showBatchModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowBatchModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
-            <View style={styles.modalHeader}>
-              <Feather name="package" size={24} color={theme.primary} />
-              <Text style={[styles.modalTitle, { color: theme.text }]}>Batch Compression</Text>
+      {/* Modals and overlays remain outside the ScrollView */}
+      {showSuccessModal && (
+        <Modal visible transparent animationType="fade">
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+            <View style={{ backgroundColor: theme.card, borderRadius: 20, padding: 32, alignItems: 'center' }}>
+              <Feather name="check-circle" size={48} color={theme.primary} />
+              <Text style={{ color: theme.text, fontSize: 18, fontWeight: 'bold', marginTop: 16 }}>{successMessage}</Text>
             </View>
-            
-            <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
-              Compress {selectedFiles.length} files with the same settings
-            </Text>
-
-            {/* Quality Setting */}
-            <View style={styles.settingGroup}>
-              <Text style={[styles.settingLabel, { color: theme.text }]}>Quality</Text>
-              <View style={styles.settingOptions}>
-                {['low', 'medium', 'high'].map((quality) => (
-                  <TouchableOpacity
-                    key={quality}
-                    style={[
-                      styles.settingOption,
-                      { backgroundColor: theme.secondaryDark, borderColor: 'transparent' },
-                      batchSettings.quality === quality && [styles.settingOptionSelected, { backgroundColor: theme.primary, borderColor: theme.primary }]
-                    ]}
-                    onPress={() => setBatchSettings(prev => ({ ...prev, quality }))}
-                  >
-                    <Text style={[
-                      styles.settingOptionText,
-                      { color: theme.textSecondary },
-                      batchSettings.quality === quality && [styles.settingOptionTextSelected, { color: theme.textInverse }]
-                    ]}>
-                      {quality.charAt(0).toUpperCase() + quality.slice(1)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Format Setting */}
-            <View style={styles.settingGroup}>
-              <Text style={[styles.settingLabel, { color: theme.text }]}>Format</Text>
-              <View style={styles.settingOptions}>
-                {['zip', 'rar', '7z'].map((format) => (
-                  <TouchableOpacity
-                    key={format}
-                    style={[
-                      styles.settingOption,
-                      { backgroundColor: theme.secondaryDark, borderColor: 'transparent' },
-                      batchSettings.format === format && [styles.settingOptionSelected, { backgroundColor: theme.primary, borderColor: theme.primary }]
-                    ]}
-                    onPress={() => setBatchSettings(prev => ({ ...prev, format }))}
-                  >
-                    <Text style={[
-                      styles.settingOptionText,
-                      { color: theme.textSecondary },
-                      batchSettings.format === format && [styles.settingOptionTextSelected, { color: theme.textInverse }]
-                    ]}>
-                      {format.toUpperCase()}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Compression Level */}
-            <View style={styles.settingGroup}>
-              <Text style={[styles.settingLabel, { color: theme.text }]}>Compression Level</Text>
-              <View style={styles.settingOptions}>
-                {['fast', 'balanced', 'maximum'].map((level) => (
-                  <TouchableOpacity
-                    key={level}
-                    style={[
-                      styles.settingOption,
-                      { backgroundColor: theme.secondaryDark, borderColor: 'transparent' },
-                      batchSettings.level === level && [styles.settingOptionSelected, { backgroundColor: theme.primary, borderColor: theme.primary }]
-                    ]}
-                    onPress={() => setBatchSettings(prev => ({ ...prev, level }))}
-                  >
-                    <Text style={[
-                      styles.settingOptionText,
-                      { color: theme.textSecondary },
-                      batchSettings.level === level && [styles.settingOptionTextSelected, { color: theme.textInverse }]
-                    ]}>
-                      {level.charAt(0).toUpperCase() + level.slice(1)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-            
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonCancel, { backgroundColor: theme.secondaryDark }]}
-                onPress={() => setShowBatchModal(false)}
-                disabled={compressing}
-              >
-                <Text style={[styles.modalButtonCancelText, { color: theme.textSecondary }]}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: theme.primary }]}
-                onPress={handleBatchCompress}
-                disabled={compressing}
-              >
-                {compressing ? (
-                  <ActivityIndicator size="small" color={theme.textInverse} />
-                ) : (
-                  <Text style={[styles.modalButtonConfirmText, { color: theme.textInverse }]}>Compress All</Text>
-                )}
+          </View>
+        </Modal>
+      )}
+      {showErrorModal && (
+        <Modal visible transparent animationType="fade">
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+            <View style={{ backgroundColor: theme.card, borderRadius: 20, padding: 32, alignItems: 'center' }}>
+              <Feather name="x-circle" size={48} color="crimson" />
+              <Text style={{ color: theme.text, fontSize: 18, fontWeight: 'bold', marginTop: 16 }}>{errorMessage}</Text>
+              <TouchableOpacity style={{ marginTop: 20 }} onPress={() => setShowErrorModal(false)}>
+                <Text style={{ color: theme.primary, fontWeight: 'bold', fontSize: 16 }}>Close</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
+      {/* Compression Options Modal */}
+      {showOptionsModal && (
+        <Modal
+          visible
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowOptionsModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.card }]}> 
+              <View style={styles.modalHeader}>
+                <Feather name="settings" size={22} color={theme.primary} />
+                <Text style={[styles.modalTitle, { color: theme.text }]}>Compression Options</Text>
+              </View>
+              <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>Choose compression settings for selected file(s).</Text>
+              {renderCompressionOptions()}
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel, { backgroundColor: theme.secondary }]}
+                  onPress={() => setShowOptionsModal(false)}
+                  disabled={compressing}
+                >
+                  <Text style={[styles.modalButtonCancelText, { color: theme.text }]}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: theme.primary }]}
+                  onPress={handleCompress}
+                  disabled={compressing}
+                >
+                  {compressing ? (
+                    <ActivityIndicator color={theme.textInverse} />
+                  ) : (
+                    <Text style={[styles.modalButtonConfirmText, { color: theme.textInverse }]}>Compress</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </ScrollView>
   );
 }
@@ -562,5 +696,41 @@ const styles = StyleSheet.create({
   modalButtonConfirmText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  featureBannerDropbox: {
+    width: '100%',
+    marginBottom: 24,
+    paddingHorizontal: 0,
+    backgroundColor: 'transparent',
+  },
+  featureBannerImageWrapDropbox: {
+    width: '100%',
+    aspectRatio: 1.7,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  featureBannerImageDropbox: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 0,
+  },
+  featureBannerTextOverlayDropbox: {
+    position: 'absolute',
+    left: 0,
+    bottom: 0,
+    width: '100%',
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    backgroundColor: 'transparent',
+    alignItems: 'flex-start',
+  },
+  featureBannerTitleDropbox: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'left',
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.35)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 6,
   },
 }); 

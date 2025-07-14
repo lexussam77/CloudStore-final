@@ -25,6 +25,7 @@ import ChangePasswordScreen from './screens/ChangePasswordScreen';
 import TwoFactorScreen from './screens/TwoFactorScreen';
 import CreditCardScreen from './screens/CreditCardScreen';
 import FileViewerScreen from './screens/FileViewerScreen';
+import DocumentScannerScreen from './screens/DocumentScannerScreen';
 import { ThemeProvider, useTheme } from './theme/ThemeContext';
 
 const Stack = createNativeStackNavigator();
@@ -78,6 +79,7 @@ function AppNavigator() {
           <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
           <Stack.Screen name="TwoFactor" component={TwoFactorScreen} />
           <Stack.Screen name="FileViewer" component={FileViewerScreen} />
+          <Stack.Screen name="DocumentScanner" component={DocumentScannerScreen} />
         </>
       ) : (
         <>

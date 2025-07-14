@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, SectionList, Modal, TouchableWithoutFeedback, Alert, SafeAreaView, FlatList, ScrollView, Image, ActivityIndicator, Animated, RefreshControl, Platform } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import * as DocumentPicker from 'expo-document-picker';
-import { uploadFiles, searchFiles, createFolder, listFiles, listFolders, API_BASE_URL, renameFile, favoriteFile, deleteFile, downloadFile, getDownloadUrl, compressFile, deleteFolder, renameFolder } from './api';
+import { uploadFiles, searchFiles, createFolder, listFiles, listFolders, API_BASE_URL, renameFile, favoriteFile, deleteFile, downloadFile, getDownloadUrl, deleteFolder, renameFolder } from './api';
 import { useNavigation } from '@react-navigation/native';
 import MyFilesSVG from '../assets/images/undraw_my-files_1xwx.svg';
 import UploadSVG from '../assets/images/undraw_upload_cucu.svg';
@@ -20,10 +20,12 @@ const categories = [
   { key: 'all', label: 'All' },
   { key: 'favourites', label: 'Favourites' },
   { key: 'folders', label: 'Folders' },
+  { key: 'scanned', label: 'Scanned Documents' },
   { key: 'compressed', label: 'Compressed Files' },
 ];
 const files = [];
 const recentlyDeleted = [];
+const scannedDocuments = [];
 
 const sections = [
   {
@@ -35,6 +37,11 @@ const sections = [
     title: 'Files',
     data: files.length ? files : [{}],
     key: 'files',
+  },
+  {
+    title: 'Scanned Documents',
+    data: scannedDocuments.length ? scannedDocuments : [{}],
+    key: 'scanned',
   },
   {
     title: 'Compressed Files',
@@ -80,6 +87,7 @@ export default function FilesScreen() {
   const [newFolderName, setNewFolderName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [fileList, setFileList] = useState(files);
+  const [scannedDocuments, setScannedDocuments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [folderPath, setFolderPath] = useState([]);
@@ -153,9 +161,6 @@ export default function FilesScreen() {
           setRenameItem(item);
           setNewName(item.name);
           setShowRenameModal(true);
-        } else if (action === 'compress') {
-          setCompressItem(item);
-          setShowCompressModal(true);
         } else if (action === 'download') {
           try {
             Alert.alert('Download', 'Getting download URL...');
@@ -190,6 +195,77 @@ export default function FilesScreen() {
           } catch (err) {
             console.error('Download error:', err);
             Alert.alert('Error', 'Failed to download file: ' + err.message);
+          }
+        } else if (action === 'share') {
+          try {
+            // Use the file's URL directly since files are stored on Cloudinary
+            const fileUrl = item.url;
+            
+            console.log('Item object:', item);
+            console.log('File URL for sharing:', fileUrl);
+            
+            if (!fileUrl) {
+              Alert.alert('Error', 'No shareable URL available');
+              return;
+            }
+            
+            if (await Sharing.isAvailableAsync()) {
+              try {
+                // Always download the file to cache first since expo-sharing only supports local files
+                const fileName = item.name;
+                const fileExtension = fileName.includes('.') ? fileName.split('.').pop() : '';
+                const baseName = fileName.includes('.') ? fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
+                const uniqueFileName = `${baseName}_${Date.now()}${fileExtension ? '.' + fileExtension : ''}`;
+                
+                const cacheDir = FileSystem.cacheDirectory + 'Shares/';
+                const cacheFileUri = cacheDir + uniqueFileName;
+                
+                console.log('Cache directory:', cacheDir);
+                console.log('Cache file URI:', cacheFileUri);
+                console.log('File name:', fileName);
+                console.log('Unique file name:', uniqueFileName);
+                
+                const dirInfo = await FileSystem.getInfoAsync(cacheDir);
+                console.log('Directory exists:', dirInfo.exists);
+                
+                if (!dirInfo.exists) {
+                  console.log('Creating directory...');
+                  await FileSystem.makeDirectoryAsync(cacheDir, { intermediates: true });
+                  console.log('Directory created successfully');
+                }
+                
+                console.log('Starting download from:', fileUrl);
+                console.log('Downloading to:', cacheFileUri);
+                
+                const downloadResult = await FileSystem.downloadAsync(fileUrl, cacheFileUri);
+                
+                console.log('Download result:', downloadResult);
+                console.log('Download status code:', downloadResult.statusCode);
+                console.log('Download status:', downloadResult.status);
+                
+                if (downloadResult.statusCode === 200 || downloadResult.status === 200) {
+                  console.log('File downloaded successfully, sharing:', cacheFileUri);
+                  await Sharing.shareAsync(cacheFileUri, {
+                    dialogTitle: `Share ${item.name}`,
+                  });
+                } else {
+                  console.error('Download failed with status:', downloadResult.statusCode || downloadResult.status);
+                  Alert.alert('Error', `Failed to download file for sharing. Status: ${downloadResult.statusCode || downloadResult.status}`);
+                }
+              } catch (downloadError) {
+                console.error('Download error for sharing:', downloadError);
+                console.error('Error message:', downloadError.message);
+                console.error('Error stack:', downloadError.stack);
+                Alert.alert('Error', 'Failed to prepare file for sharing: ' + downloadError.message);
+              }
+            } else {
+              Alert.alert('Sharing not available', 'Sharing is not available on this device');
+            }
+          } catch (err) {
+            console.error('Share error:', err);
+            console.error('Error message:', err.message);
+            console.error('Error stack:', err.stack);
+            Alert.alert('Error', 'Failed to share file: ' + err.message);
           }
         } else if (action === 'delete') {
           Alert.alert(
@@ -364,6 +440,7 @@ export default function FilesScreen() {
         name: files[0].name || files[0].fileName || 'upload',
       });
       formData.append('upload_preset', UPLOAD_PRESET);
+      formData.append('resource_type', 'raw'); // Ensure it's treated as a raw file
       console.log('Sending to Cloudinary...');
       xhr.send(formData);
     } catch (err) {
@@ -375,7 +452,7 @@ export default function FilesScreen() {
   };
 
   const handleScan = () => {
-    Alert.alert('Scan', 'This would open a document scanner.');
+    navigation.navigate('DocumentScanner');
   };
   const handleCreateFolder = () => {
     setShowFolderModal(true);
@@ -621,6 +698,10 @@ export default function FilesScreen() {
         setShowFolderModal(true);
         return;
       }
+      if (option === 'Scan Document') {
+        handleScan();
+        return;
+      }
       setUploading(true);
       let fileAsset = null;
       let formData = new FormData();
@@ -654,6 +735,7 @@ export default function FilesScreen() {
         }
       }
       formData.append('upload_preset', UPLOAD_PRESET);
+      formData.append('resource_type', 'raw'); // Ensure it's treated as a raw file
       try {
         const res = await fetch(`${CLOUDINARY_URL}/raw/upload`, {
           method: 'POST',
@@ -718,6 +800,7 @@ export default function FilesScreen() {
   let showFolders = selectedCategory === 'all' || selectedCategory === 'folders';
   
   console.log('Current fileList:', fileList);
+  console.log('Current scannedDocuments:', scannedDocuments);
   console.log('Current folders:', folders);
   console.log('Selected category:', selectedCategory);
   console.log('Show folders:', showFolders);
@@ -730,12 +813,21 @@ export default function FilesScreen() {
   } else {
     // Apply category filtering only when not searching
     if (selectedCategory === 'favourites') {
-      filteredFiles = fileList.filter(f => f.favourite || f.favorites);
+      const allFiles = [...fileList, ...scannedDocuments];
+      filteredFiles = allFiles.filter(f => f.favourite || f.favorites);
     } else if (selectedCategory === 'folders') {
       // For folders tab, we don't need to filter files since we show folders separately
       filteredFiles = [];
+    } else if (selectedCategory === 'scanned') {
+      // Show scanned documents (PDFs)
+      filteredFiles = scannedDocuments;
     } else if (selectedCategory === 'compressed') {
-      filteredFiles = fileList.filter(f => f.name && f.name.includes('_compressed'));
+      // Show all files with '_compressed' in the name, including images/videos
+      const allFiles = [...fileList, ...scannedDocuments];
+      filteredFiles = allFiles.filter(f => f.name && f.name.includes('_compressed'));
+    } else if (selectedCategory === 'all') {
+      // Show both regular files and scanned documents
+      filteredFiles = [...fileList, ...scannedDocuments];
     }
   }
   
@@ -760,6 +852,7 @@ export default function FilesScreen() {
   const menuOptions = [
     { label: 'Upload Picture', icon: 'image' },
     { label: 'Take Photo', icon: 'camera' },
+    { label: 'Scan Document', icon: 'edit-3' },
     { label: 'Upload Document', icon: 'file-text' },
     { label: 'Upload Audio', icon: 'music' },
     { label: 'Upload Video', icon: 'video' },
@@ -828,10 +921,24 @@ export default function FilesScreen() {
       
       if (filesRes && filesRes.success && Array.isArray(filesRes.data)) {
         console.log('Setting fileList to:', filesRes.data);
-        setFileList(filesRes.data);
+        
+        // Separate scanned documents (PDFs) from regular files
+        const scannedDocs = filesRes.data.filter(file => 
+          file.name && file.name.toLowerCase().endsWith('.pdf')
+        );
+        const regularFiles = filesRes.data.filter(file => 
+          !file.name || !file.name.toLowerCase().endsWith('.pdf')
+        );
+        
+        console.log('Scanned documents found:', scannedDocs.length);
+        console.log('Regular files found:', regularFiles.length);
+        
+        setFileList(regularFiles);
+        setScannedDocuments(scannedDocs);
       } else {
         console.log('Files API response was not successful or data is not an array');
         setFileList([]);
+        setScannedDocuments([]);
       }
       
       if (foldersRes && foldersRes.success && Array.isArray(foldersRes.data)) {
@@ -930,6 +1037,15 @@ export default function FilesScreen() {
           )
         );
         
+        // Also update scanned documents if the item is a scanned document
+        setScannedDocuments(prevScanned => 
+          prevScanned.map(file => 
+            file.id === item.id 
+              ? { ...file, favourite: !file.favourite, favorites: !file.favorites }
+              : file
+          )
+        );
+        
         // Show success message
         const action = item.favourite || item.favorites ? 'removed from' : 'added to';
         setSuccessMessage(`File ${action} favorites!`);
@@ -942,40 +1058,6 @@ export default function FilesScreen() {
       }
     } catch (err) {
       Alert.alert('Error', err.message || 'Failed to update favorite status');
-    }
-  };
-
-  const handleCompress = async () => {
-    if (!compressItem) return;
-    
-    let token = null;
-    try {
-      token = await AsyncStorage.getItem('jwt');
-    } catch {}
-    
-    if (!token) {
-      Alert.alert('Error', 'Authentication required');
-      return;
-    }
-
-    setCompressing(true);
-    try {
-      // Call compression API
-      const res = await compressFile(token, compressItem.id, compressionSettings);
-      
-      if (res.success) {
-        setShowCompressModal(false);
-        const compressionRatio = res.data.compressionRatio ? Math.round(res.data.compressionRatio) : 60;
-        setSuccessMessage(`File compressed successfully! Size reduced by ${compressionRatio}%`);
-        setShowSuccessModal(true);
-        await refreshFiles();
-      } else {
-        Alert.alert('Error', res.error || 'Failed to compress file');
-      }
-    } catch (err) {
-      Alert.alert('Error', err.message || 'Failed to compress file');
-    } finally {
-      setCompressing(false);
     }
   };
 
@@ -1013,8 +1095,23 @@ export default function FilesScreen() {
     refreshFiles();
   };
 
-  const handleFilePress = (file) => {
-    // Navigate to file viewer screen
+  const handleFilePress = async (file) => {
+    const extension = file.name.split('.').pop().toLowerCase();
+    if (extension === 'pdf') {
+      try {
+        let localUri = file.url;
+        if (!file.url.startsWith('file://')) {
+          const fileName = file.name || 'temp.pdf';
+          const downloadRes = await FileSystem.downloadAsync(file.url, FileSystem.cacheDirectory + fileName);
+          localUri = downloadRes.uri;
+        }
+        await Sharing.shareAsync(localUri, { mimeType: 'application/pdf' });
+      } catch (err) {
+        Alert.alert('Error', 'Could not open PDF in device app.');
+      }
+      return;
+    }
+    // For other file types, use the in-app viewer
     navigation.navigate('FileViewer', { file });
   };
 
@@ -1234,6 +1331,7 @@ export default function FilesScreen() {
               <Text style={[styles.emptyStateSubtitle, { color: theme.textSecondary }]}>
                 {selectedCategory === 'favourites' ? 'No favorite files yet' : 
                  selectedCategory === 'compressed' ? 'No compressed files yet' : 
+                 selectedCategory === 'scanned' ? 'No scanned documents yet' :
                  'Upload files to see them here'}
               </Text>
               {selectedCategory === 'all' && (
@@ -1244,6 +1342,16 @@ export default function FilesScreen() {
                 >
                   <Feather name="upload" size={20} color={theme.textInverse} style={{ marginRight: 8 }} />
                   <Text style={[styles.emptyStateButtonText, { color: theme.textInverse }]}>Upload Files</Text>
+                </TouchableOpacity>
+              )}
+              {selectedCategory === 'scanned' && (
+                <TouchableOpacity 
+                  style={[styles.emptyStateButton, { backgroundColor: theme.primary }]} 
+                  onPress={() => navigation.navigate('DocumentScanner')}
+                  activeOpacity={0.85}
+                >
+                  <Feather name="edit-3" size={20} color={theme.textInverse} style={{ marginRight: 8 }} />
+                  <Text style={[styles.emptyStateButtonText, { color: theme.textInverse }]}>Scan Document</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -1266,48 +1374,48 @@ export default function FilesScreen() {
           animationType="fade"
           onRequestClose={closeMenu}
         >
-          <TouchableOpacity style={styles.menuOverlay} onPress={closeMenu} activeOpacity={1}>
-            <View style={styles.centeredMenuCard}>
-            {menuType === 'file' ? (
-              <>
+          <TouchableOpacity style={[styles.menuOverlay, { backgroundColor: theme.overlay }]} onPress={closeMenu} activeOpacity={1}>
+            <View style={[styles.centeredMenuCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}> 
+              {menuType === 'file' ? (
+                <>
                   <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('open', selectedItem, 'file')}>
-                    <Feather name="eye" size={24} color="#0061FF" />
-                    <Text style={styles.centeredMenuText}>Open</Text>
-                </TouchableOpacity>
+                    <Feather name="eye" size={24} color={theme.primary} />
+                    <Text style={[styles.centeredMenuText, { color: theme.text }]}>Open</Text>
+                  </TouchableOpacity>
                   <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('rename', selectedItem, 'file')}>
-                    <Feather name="edit-3" size={24} color="#0061FF" />
-                    <Text style={styles.centeredMenuText}>Rename</Text>
-                </TouchableOpacity>
-                  <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('compress', selectedItem, 'file')}>
-                    <Feather name="compress" size={24} color="#0061FF" />
-                    <Text style={styles.centeredMenuText}>Compress</Text>
-                </TouchableOpacity>
+                    <Feather name="edit-3" size={24} color={theme.primary} />
+                    <Text style={[styles.centeredMenuText, { color: theme.text }]}>Rename</Text>
+                  </TouchableOpacity>
                   <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('download', selectedItem, 'file')}>
-                    <Feather name="download" size={24} color="#0061FF" />
-                    <Text style={styles.centeredMenuText}>Download</Text>
-                </TouchableOpacity>
+                    <Feather name="download" size={24} color={theme.primary} />
+                    <Text style={[styles.centeredMenuText, { color: theme.text }]}>Download</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('share', selectedItem, 'file')}>
+                    <Feather name="share-2" size={24} color={theme.primary} />
+                    <Text style={[styles.centeredMenuText, { color: theme.text }]}>Share</Text>
+                  </TouchableOpacity>
                   <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('delete', selectedItem, 'file')}>
                     <Feather name="trash" size={24} color="crimson" />
                     <Text style={[styles.centeredMenuText, { color: 'crimson' }]}>Delete</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
                   <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('open', selectedItem, 'folder')}>
-                    <Feather name="folder-open" size={24} color="#0061FF" />
-                    <Text style={styles.centeredMenuText}>Open</Text>
-                </TouchableOpacity>
+                    <Feather name="folder-open" size={24} color={theme.primary} />
+                    <Text style={[styles.centeredMenuText, { color: theme.text }]}>Open</Text>
+                  </TouchableOpacity>
                   <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('rename', selectedItem, 'folder')}>
-                    <Feather name="edit-3" size={24} color="#0061FF" />
-                    <Text style={styles.centeredMenuText}>Rename</Text>
-                </TouchableOpacity>
+                    <Feather name="edit-3" size={24} color={theme.primary} />
+                    <Text style={[styles.centeredMenuText, { color: theme.text }]}>Rename</Text>
+                  </TouchableOpacity>
                   <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('delete', selectedItem, 'folder')}>
                     <Feather name="trash" size={24} color="crimson" />
                     <Text style={[styles.centeredMenuText, { color: 'crimson' }]}>Delete</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
           </TouchableOpacity>
         </Modal>
         {/* Plus Button and Upload Modal */}
@@ -1382,125 +1490,6 @@ export default function FilesScreen() {
           </TouchableWithoutFeedback>
         </Modal>
 
-        {/* Compression Modal */}
-        <Modal
-          visible={showCompressModal}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setShowCompressModal(false)}
-        >
-          <TouchableWithoutFeedback onPress={() => setShowCompressModal(false)}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback>
-                <View style={styles.modalContent}>
-                  <View style={styles.modalHeader}>
-                    <Feather name="compress" size={24} color="#2563eb" />
-                    <Text style={styles.modalTitle}>Compress File</Text>
-                  </View>
-                  
-                  <Text style={styles.modalSubtitle}>
-                    Compress "{compressItem?.name}" to reduce file size
-                  </Text>
-
-                  {/* Quality Setting */}
-                  <View style={styles.settingGroup}>
-                    <Text style={styles.settingLabel}>Quality</Text>
-                    <View style={styles.settingOptions}>
-                      {['low', 'medium', 'high'].map((quality) => (
-                        <TouchableOpacity
-                          key={quality}
-                          style={[
-                            styles.settingOption,
-                            compressionSettings.quality === quality && styles.settingOptionSelected
-                          ]}
-                          onPress={() => setCompressionSettings(prev => ({ ...prev, quality }))}
-                        >
-                          <Text style={[
-                            styles.settingOptionText,
-                            compressionSettings.quality === quality && styles.settingOptionTextSelected
-                          ]}>
-                            {quality.charAt(0).toUpperCase() + quality.slice(1)}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-
-                  {/* Format Setting */}
-                  <View style={styles.settingGroup}>
-                    <Text style={styles.settingLabel}>Format</Text>
-                    <View style={styles.settingOptions}>
-                      {['zip', 'rar', '7z'].map((format) => (
-                        <TouchableOpacity
-                          key={format}
-                          style={[
-                            styles.settingOption,
-                            compressionSettings.format === format && styles.settingOptionSelected
-                          ]}
-                          onPress={() => setCompressionSettings(prev => ({ ...prev, format }))}
-                        >
-                          <Text style={[
-                            styles.settingOptionText,
-                            compressionSettings.format === format && styles.settingOptionTextSelected
-                          ]}>
-                            {format.toUpperCase()}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-
-                  {/* Compression Level */}
-                  <View style={styles.settingGroup}>
-                    <Text style={styles.settingLabel}>Compression Level</Text>
-                    <View style={styles.settingOptions}>
-                      {['fast', 'balanced', 'maximum'].map((level) => (
-                        <TouchableOpacity
-                          key={level}
-                          style={[
-                            styles.settingOption,
-                            compressionSettings.level === level && styles.settingOptionSelected
-                          ]}
-                          onPress={() => setCompressionSettings(prev => ({ ...prev, level }))}
-                        >
-                          <Text style={[
-                            styles.settingOptionText,
-                            compressionSettings.level === level && styles.settingOptionTextSelected
-                          ]}>
-                            {level.charAt(0).toUpperCase() + level.slice(1)}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-                  
-                  <View style={styles.modalButtons}>
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.modalButtonCancel]}
-                      onPress={() => setShowCompressModal(false)}
-                      disabled={compressing}
-                    >
-                      <Text style={styles.modalButtonCancelText}>Cancel</Text>
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.modalButtonConfirm]}
-                      onPress={handleCompress}
-                      disabled={compressing}
-                    >
-                      {compressing ? (
-                        <ActivityIndicator size="small" color="#fff" />
-                      ) : (
-                        <Text style={styles.modalButtonConfirmText}>Compress</Text>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-
         {/* Create Folder Modal */}
         <Modal
           visible={showFolderModal}
@@ -1509,23 +1498,29 @@ export default function FilesScreen() {
           onRequestClose={() => setShowFolderModal(false)}
         >
           <TouchableWithoutFeedback onPress={() => setShowFolderModal(false)}>
-            <View style={styles.modalOverlay}>
+            <View style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}>
               <TouchableWithoutFeedback>
-                <View style={styles.modalContent}>
+                <View style={[styles.modalContent, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
                   <View style={styles.modalHeader}>
-                    <Feather name="folder-plus" size={24} color="#2563eb" />
-                    <Text style={styles.modalTitle}>Create New Folder</Text>
+                    <Feather name="folder-plus" size={24} color={theme.primary} />
+                    <Text style={[styles.modalTitle, { color: theme.text }]}>Create New Folder</Text>
                   </View>
                   
-                  <Text style={styles.modalSubtitle}>
+                  <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
                     Enter a name for your new folder
                   </Text>
                   
                   <TextInput
-                    style={styles.modalInput}
+                    style={[styles.modalInput, { 
+                      backgroundColor: theme.inputBackground, 
+                      borderColor: theme.border, 
+                      color: theme.text,
+                      placeholderTextColor: theme.textSecondary 
+                    }]}
                     value={newFolderName}
                     onChangeText={setNewFolderName}
                     placeholder="Folder name..."
+                    placeholderTextColor={theme.textSecondary}
                     autoFocus={true}
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -1534,20 +1529,20 @@ export default function FilesScreen() {
                   
                   <View style={styles.modalButtons}>
                     <TouchableOpacity
-                      style={[styles.modalButton, styles.modalButtonCancel]}
+                      style={[styles.modalButton, styles.modalButtonCancel, { backgroundColor: theme.secondary, borderColor: theme.border }]}
                       onPress={() => {
                         setShowFolderModal(false);
                         setNewFolderName('');
                       }}
                     >
-                      <Text style={styles.modalButtonCancelText}>Cancel</Text>
+                      <Text style={[styles.modalButtonCancelText, { color: theme.textSecondary }]}>Cancel</Text>
                     </TouchableOpacity>
                     
                     <TouchableOpacity
-                      style={[styles.modalButton, styles.modalButtonConfirm]}
+                      style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: theme.primary }]}
                       onPress={handleAddFolder}
                     >
-                      <Text style={styles.modalButtonConfirmText}>Create Folder</Text>
+                      <Text style={[styles.modalButtonConfirmText, { color: theme.textInverse }]}>Create Folder</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -2225,42 +2220,6 @@ const styles = StyleSheet.create({
   successButtonText: {
     fontSize: 16,
     fontWeight: '600',
-  },
-  // Compression Modal Styles
-  settingGroup: {
-    marginBottom: 20,
-  },
-  settingLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#222',
-    marginBottom: 8,
-  },
-  settingOptions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  settingOption: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: '#f1f5f9',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  settingOptionSelected: {
-    backgroundColor: '#2563eb',
-    borderColor: '#2563eb',
-  },
-  settingOptionText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#64748b',
-  },
-  settingOptionTextSelected: {
-    color: '#fff',
   },
   // Current Folder Indicator Styles
   currentFolderIndicator: {

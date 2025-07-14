@@ -478,68 +478,6 @@ export default function HomeScreen() {
               </View>
             )}
           </Animated.View>
-
-          {/* Popular Files Section */}
-          <View style={[styles.sectionCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Popular Files</Text>
-            <FlatList
-              data={allFiles.slice(0, 3)}
-              keyExtractor={item => item.id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.recentFilesList}
-              renderItem={({ item }) => {
-                const preview = getFilePreview(item);
-                return (
-                  <TouchableOpacity 
-                    style={[styles.recentFileCard, { backgroundColor: theme.surface }]}
-                    onPress={() => handleFilePress(item)}
-                    activeOpacity={0.8}
-                  >
-                    <View style={styles.filePreviewContainer}>
-                      {preview?.type === 'image' ? (
-                        <Image 
-                          source={{ uri: preview.source }} 
-                          style={styles.filePreviewImage}
-                          resizeMode="cover"
-                        />
-                      ) : preview?.type === 'video' ? (
-                        <View style={styles.videoPreviewContainer}>
-                          <Image 
-                            source={{ uri: preview.source }} 
-                            style={styles.filePreviewImage}
-                            resizeMode="cover"
-                          />
-                          <View style={[styles.videoPlayOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.6)' }]}> 
-                            <Feather name="play" size={16} color="#fff" />
-                          </View>
-                        </View>
-                      ) : preview?.type === 'audio' ? (
-                        <View style={[styles.audioPreviewContainer, { backgroundColor: theme.primary }]}> 
-                          <Feather name="music" size={24} color={theme.textInverse} />
-                        </View>
-                      ) : preview?.type === 'pdf' ? (
-                        <View style={[styles.pdfPreviewContainer, { backgroundColor: '#ff4444' }]}> 
-                          <Feather name="file-text" size={24} color="#fff" />
-                        </View>
-                      ) : preview?.type === 'text' ? (
-                        <View style={[styles.textPreviewContainer, { backgroundColor: theme.primary }]}> 
-                          <Feather name="file-text" size={24} color={theme.textInverse} />
-                        </View>
-                      ) : (
-                        <Image source={{ uri: getFileIcon(item.name) }} style={styles.recentFileThumbImg} />
-                      )}
-                    </View>
-                    <Text style={[styles.recentFileName, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
-                    <Text style={[styles.recentFileMeta, { color: theme.textSecondary }]}>{formatDate(item.modifiedAt || item.createdAt)}</Text>
-                    <View style={styles.popularBadge}>
-                      <Feather name="trending-up" size={12} color="#fff" />
-                    </View>
-                  </TouchableOpacity>
-                );
-              }}
-            />
-          </View>
           
           {/* Folders Grid */}
           {folders.length > 0 && (
@@ -601,14 +539,15 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
   },
   sectionCard: {
-    borderRadius: 20,
-    marginHorizontal: 16,
-    marginBottom: 20,
-    padding: 20,
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
+    borderRadius: 16,
+    marginHorizontal: 12,
+    marginBottom: 12,
+    padding: 16,
+    shadowOpacity: 0.10,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+    backgroundColor: '#fff',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -617,10 +556,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: 0.1,
-    marginBottom: 12,
+    fontSize: 14.5,
+    fontWeight: 'bold',
+    marginBottom: 6,
   },
   sketchIllustration: {
     alignItems: 'flex-end',
@@ -828,35 +766,38 @@ const styles = StyleSheet.create({
     borderRadius: 1,
   },
   recentFilesList: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    paddingVertical: 0,
+    paddingHorizontal: 0,
   },
   recentFileCard: {
-    borderRadius: 16,
-    marginRight: 16,
-    padding: 16,
-    width: 130,
+    width: 110,
+    height: 120,
+    borderRadius: 12,
+    marginRight: 10,
+    padding: 10,
+    backgroundColor: '#f7f7fa',
     alignItems: 'center',
+    justifyContent: 'center',
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
   recentFileThumbImg: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
+    width: 36,
+    height: 36,
     marginBottom: 6,
+    borderRadius: 7,
   },
   recentFileName: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 2,
     textAlign: 'center',
   },
   recentFileMeta: {
-    fontSize: 12,
-    marginBottom: 2,
+    fontSize: 10,
+    color: '#888',
     textAlign: 'center',
   },
   menuButton: {
@@ -1104,5 +1045,98 @@ const styles = StyleSheet.create({
     height: 120,
     marginBottom: 12,
     borderRadius: 12,
+  },
+  featureCard: {
+    width: '100%',
+    borderRadius: 18,
+    marginBottom: 16,
+    overflow: 'hidden',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  featureImage: {
+    width: '100%',
+    height: 200,
+  },
+  featureContent: {
+    padding: 20,
+  },
+  featureTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  featureDescription: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  featureCardDropbox: {
+    width: '100%',
+    marginBottom: 24,
+    paddingHorizontal: 0,
+    backgroundColor: 'transparent',
+  },
+  featureContentDropbox: {
+    paddingHorizontal: 16,
+    paddingTop: 18,
+    paddingBottom: 10,
+  },
+  featureTitleDropbox: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 6,
+    textAlign: 'left',
+  },
+  featureDescriptionDropbox: {
+    fontSize: 15,
+    fontWeight: '500',
+    marginBottom: 0,
+    textAlign: 'left',
+  },
+  featureImageDropbox: {
+    width: '100%',
+    height: 180,
+    marginTop: 0,
+    borderRadius: 0,
+  },
+  featureBannerDropbox: {
+    width: '100%',
+    marginBottom: 24,
+    paddingHorizontal: 0,
+    backgroundColor: 'transparent',
+  },
+  featureBannerImageWrapDropbox: {
+    width: '100%',
+    aspectRatio: 1.7,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  featureBannerImageDropbox: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 0,
+  },
+  featureBannerTextOverlayDropboxHome: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    backgroundColor: 'transparent',
+    alignItems: 'flex-end',
+  },
+  featureBannerTitleDropboxHome: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'right',
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.35)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 6,
   },
 }); 
