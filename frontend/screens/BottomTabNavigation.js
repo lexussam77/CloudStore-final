@@ -88,32 +88,49 @@ export default function BottomTabNavigation({ navigation }) {
             const isActive = activeTab === tab.key;
             const animStyle = {
               transform: [
-                { translateY: tabAnim[tab.key].interpolate({ inputRange: [0, 1], outputRange: [0, -10] }) },
-                { scale: tabAnim[tab.key].interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) },
+                { translateY: tabAnim[tab.key].interpolate({ inputRange: [0, 1], outputRange: [0, isCompression ? -24 : -10] }) },
+                { scale: tabAnim[tab.key].interpolate({ inputRange: [0, 1], outputRange: [1, isCompression ? 1.18 : 1.12] }) },
               ],
             };
             return (
               <TouchableOpacity
                 key={tab.key}
-                style={styles.tabButton}
+                style={isCompression ? [styles.tabButton, styles.compressionTabButton] : styles.tabButton}
                 onPress={() => handleTabPress(tab)}
                 onPressIn={() => handleTabPressIn(tab)}
                 onPressOut={() => handleTabPressOut(tab)}
+                activeOpacity={0.85}
               >
-                <Animated.View style={animStyle}>
-                  <Feather
-                    name={tab.icon}
-                    size={24}
-                    color={isActive ? theme.primary : (theme.isDark ? '#ffffff' : theme.textSecondary)}
-                    style={isActive ? styles.activeTabIcon : styles.tabIcon}
-                  />
+                <Animated.View style={isCompression ? [animStyle, styles.compressionIconShadow] : animStyle}>
+                  {isCompression ? (
+                    <View style={[
+                      styles.compressionIconWrap,
+                      isActive && styles.compressionIconWrapActive,
+                    ]}>
+                      <Feather
+                        name={tab.icon}
+                        size={40}
+                        color={'#000'}
+                        style={styles.compressionIcon}
+                      />
+                    </View>
+                  ) : (
+                    <Feather
+                      name={tab.icon}
+                      size={24}
+                      color={isActive ? theme.primary : '#fff'}
+                      style={isActive ? styles.activeTabIcon : styles.tabIcon}
+                    />
+                  )}
                 </Animated.View>
                 <Text style={[
-                  styles.tabLabel, 
-                  { color: isActive ? theme.primary : (theme.isDark ? '#ffffff' : theme.textSecondary) },
-                  tab.key === 'Compression' && styles.compressionTabLabel
-                ]}> 
-                  {tab.key === 'Compression' ? 'Compress' : tab.label}
+                  styles.tabLabel,
+                  isCompression
+                    ? { color: isActive ? '#000' : '#fff' }
+                    : { color: isActive ? theme.primary : '#fff' },
+                  isCompression && styles.compressionTabLabel
+                ]} numberOfLines={1} adjustsFontSizeToFit>
+                  {isCompression ? 'Compress' : tab.label}
                 </Text>
               </TouchableOpacity>
             );
@@ -189,31 +206,43 @@ const styles = StyleSheet.create({
   },
   compressionTabLabel: {
     fontWeight: 'bold',
-    fontSize: 12,
+    fontSize: 11,
     marginTop: 4,
     textAlign: 'center',
+    maxWidth: 60,
   },
   compressionTabButton: {
-    borderWidth: 2,
-    borderRadius: 20,
-    padding: 4,
-  },
-  compressionTabButtonActive: {
-    // Background color will be applied dynamically
+    zIndex: 2,
+    marginTop: -18,
   },
   compressionIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#0061FF',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#fff', // default white background
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#000', // black border
+    shadowColor: '#222', // dark shadow
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 10,
   },
   compressionIconWrapActive: {
-    backgroundColor: '#fff',
+    backgroundColor: '#f0f0f0', // light gray when active
+    borderColor: '#000', // black border when active
   },
   compressionIcon: {
-    width: 24,
-    height: 24,
+    width: 40,
+    height: 40,
+  },
+  compressionIconShadow: {
+    shadowColor: '#222', // dark shadow
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 10,
   },
 });
