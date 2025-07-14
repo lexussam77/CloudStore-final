@@ -6,7 +6,6 @@ import Feather from 'react-native-vector-icons/Feather';
 import FileItem from './FileItem';
 import { useTheme } from '../theme/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
-import ExpertsBro from '../assets/images/pngs/Experts-bro.png';
 import HappyStudentBro from '../assets/images/pngs/Happy student-bro.png';
 
 export default function CompressionScreen() {
@@ -302,7 +301,7 @@ export default function CompressionScreen() {
     >
       {/* Feature Banner Image */}
       <View style={{ alignItems: 'center', marginTop: 12, marginBottom: 8 }}>
-        <Image source={ExpertsBro} style={{ width: 220, height: 140, borderRadius: 18 }} resizeMode="cover" />
+        <Image source={HappyStudentBro} style={{ width: 220, height: 140, borderRadius: 18 }} resizeMode="cover" />
       </View>
       {/* Analytics/Stats Section */}
       <View style={[styles.statsContainer, { backgroundColor: theme.card, shadowColor: theme.shadow }]}> 
