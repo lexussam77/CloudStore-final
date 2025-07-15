@@ -7,6 +7,52 @@ import FileItem from './FileItem';
 import { useTheme } from '../theme/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import HappyStudentBro from '../assets/images/pngs/Happy student-bro.png';
+import * as FileSystem from 'expo-file-system';
+
+// Helper to upload compressed file to Cloudinary and register with backend
+async function uploadCompressedToCloudinaryAndRegister(token, compressedFile, folderId) {
+  const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/ds5gugfv0/raw/upload';
+  const UPLOAD_PRESET = 'EXPO_UPLOAD';
+  const API_BASE_URL = 'http://192.168.254.13:8080/api'; // Use your actual API base URL
+
+  // 1. Download compressed file from backend
+  const downloadUrl = `${API_BASE_URL}/files/${compressedFile.id}/download`;
+  const localUri = FileSystem.cacheDirectory + compressedFile.name;
+  const downloadRes = await FileSystem.downloadAsync(downloadUrl, localUri, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+
+  // 2. Upload to Cloudinary
+  const formData = new FormData();
+  formData.append('file', {
+    uri: downloadRes.uri,
+    type: compressedFile.format || 'application/octet-stream',
+    name: compressedFile.name,
+  });
+  formData.append('upload_preset', UPLOAD_PRESET);
+  formData.append('resource_type', 'raw');
+  const cloudinaryRes = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
+  const cloudinaryData = await cloudinaryRes.json();
+  if (!cloudinaryData.secure_url) throw new Error('Cloudinary upload failed');
+
+  // 3. Register with backend
+  const registerData = {
+    name: compressedFile.name,
+    url: cloudinaryData.secure_url,
+    type: compressedFile.format || 'application/octet-stream',
+    size: cloudinaryData.bytes || compressedFile.compressedSize || 0,
+    folderId: folderId,
+  };
+  const registerRes = await fetch(`${API_BASE_URL}/files/register`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(registerData),
+  });
+  return registerRes.ok;
+}
 
 export default function CompressionScreen() {
   const { theme } = useTheme();
@@ -236,10 +282,17 @@ export default function CompressionScreen() {
       try {
         const res = await compressFile(token, file.id, dto);
         results.push({ file, success: res.success, error: res.error });
-        if (res.success) {
+        if (res.success && res.data) {
           anySuccess = true;
           // Delete the original file after successful compression
           await deleteFile(token, file.id);
+          // Upload compressed file to Cloudinary and register with backend
+          try {
+            await uploadCompressedToCloudinaryAndRegister(token, res.data, file.folderId || null);
+          } catch (cloudErr) {
+            console.error('Cloudinary upload failed:', cloudErr);
+            // Optionally show an error modal or message
+          }
         }
       } catch (err) {
         results.push({ file, success: false, error: err.message });
@@ -251,13 +304,13 @@ export default function CompressionScreen() {
     setShowOptionsModal(false);
     await fetchFiles();
     if (anySuccess) {
-      setSuccessMessage('File(s) compressed successfully!');
+      setSuccessMessage('File(s) compressed and uploaded!');
       setShowSuccessModal(true);
       setTimeout(() => {
         setShowSuccessModal(false);
         if (navigation.canGoBack()) {
           navigation.goBack();
-        } // else do nothing
+        }
       }, 1500);
     } else {
       setErrorMessage('Compression failed for all selected files.');
@@ -388,17 +441,17 @@ export default function CompressionScreen() {
           ))
         )}
         {/* Compress Button */}
-        <TouchableOpacity
+          <TouchableOpacity
           style={[
             styles.batchButton,
             { backgroundColor: theme.primary, marginTop: 16, alignSelf: 'center', borderRadius: 16, shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 2 }
           ]}
-          onPress={() => setShowOptionsModal(true)}
-          disabled={compressing}
-        >
-          <Feather name="archive" size={20} color={theme.textInverse} />
-          <Text style={[styles.batchButtonText, { color: theme.textInverse }]}>Compress Selected</Text>
-        </TouchableOpacity>
+            onPress={() => setShowOptionsModal(true)}
+            disabled={compressing}
+          >
+            <Feather name="archive" size={20} color={theme.textInverse} />
+            <Text style={[styles.batchButtonText, { color: theme.textInverse }]}>Compress Selected</Text>
+          </TouchableOpacity>
       </View>
       {/* Modals and overlays remain outside the ScrollView */}
       {showSuccessModal && (

@@ -615,32 +615,50 @@ export default function FileViewerScreen({ route, navigation }) {
     </View>
   );
 
+  // Helper to check if file is compressed
+  const isCompressed = file.name && file.name.includes('_compressed');
+
+  // Custom compressed file viewers
+  const renderCompressedImage = () => (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
+      <Text style={{ color: '#0061FF', fontWeight: 'bold', marginBottom: 8 }}>Compressed Image</Text>
+      {renderImage()}
+    </View>
+  );
+  const renderCompressedVideo = () => (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
+      <Text style={{ color: '#0061FF', fontWeight: 'bold', marginBottom: 8 }}>Compressed Video</Text>
+      {renderVideo()}
+    </View>
+  );
+
+  // Remove custom compressed viewers and use regular viewers for compressed files
   const renderContent = () => {
-    console.log('=== RENDER CONTENT ===');
-    console.log('File type:', fileType);
-    console.log('File name:', file.name);
-    
+    const extension = file.name.split('.').pop().toLowerCase();
+    if (file.name && file.name.includes('_compressed')) {
+      if (["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(extension)) {
+        return renderImage();
+      } else if (["mp4", "avi", "mov", "wmv", "flv", "webm", "mkv"].includes(extension)) {
+        return renderVideo();
+      }
+      // fallback for unsupported compressed types
+      return renderUnsupported();
+    }
+    // fallback to regular logic
     switch (fileType) {
       case 'image':
-        console.log('Rendering: image');
         return renderImage();
       case 'video':
-        console.log('Rendering: video');
         return renderVideo();
       case 'audio':
-        console.log('Rendering: audio');
         return renderAudio();
       case 'pdf':
-        console.log('Rendering: PDF with local viewer');
         return renderPDF();
       case 'text':
-        console.log('Rendering: text');
         return renderText();
       case 'unsupported':
-        console.log('Rendering: unsupported');
         return renderUnsupported();
       default:
-        console.log('Rendering: default (null)');
         return null;
     }
   };

@@ -165,12 +165,4 @@ public class FileController {
         CompressionResponse response = fileService.compressFile(user, id, request);
         return ResponseEntity.ok(response);
     }
-
-    @PostMapping("/{id}/extract")
-    public ResponseEntity<List<FileResponse>> extractFile(
-            @AuthenticationPrincipal User user,
-            @PathVariable Long id) {
-        List<FileResponse> extracted = fileService.extractFile(user, id);
-        return ResponseEntity.ok(extracted);
-    }
 } 
