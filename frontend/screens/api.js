@@ -120,6 +120,17 @@ export async function deleteCurrentUser(token) {
   });
 }
 
+export async function changePassword(token, currentPassword, newPassword) {
+  return robustFetch(`${API_BASE_URL}/user/change-password`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
 // --- FILES ---
 export async function listFiles(token, folderId = '') {
   const url = folderId ? `${API_BASE_URL}/files?folderId=${folderId}` : `${API_BASE_URL}/files`;

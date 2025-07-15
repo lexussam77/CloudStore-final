@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, Animated } from 'react-native';
 import SimplePrompt from './SimplePrompt';
 import { useTheme } from '../theme/ThemeContext';
+import { changePassword } from './api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ChangePasswordScreen({ navigation }) {
   const { theme } = useTheme();
@@ -11,13 +13,14 @@ export default function ChangePasswordScreen({ navigation }) {
   const [promptVisible, setPromptVisible] = useState(false);
   const [promptMessage, setPromptMessage] = useState('');
   const [focusedInput, setFocusedInput] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
   }, []);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!current || !next || !confirm) {
       setPromptMessage('Please fill all fields.');
       setPromptVisible(true);
@@ -28,9 +31,30 @@ export default function ChangePasswordScreen({ navigation }) {
       setPromptVisible(true);
       return;
     }
-    setPromptMessage('Password changed successfully!');
-    setPromptVisible(true);
-    setTimeout(() => navigation.goBack(), 1200);
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem('jwt');
+      if (!token) {
+        setPromptMessage('Authentication required.');
+        setPromptVisible(true);
+        setLoading(false);
+        return;
+      }
+      const res = await changePassword(token, current, next);
+      if (res.success) {
+        setPromptMessage('Password changed successfully!');
+        setPromptVisible(true);
+        setTimeout(() => navigation.goBack(), 1200);
+      } else {
+        setPromptMessage(res.error || 'Failed to change password.');
+        setPromptVisible(true);
+      }
+    } catch (err) {
+      setPromptMessage(err.message || 'Network error.');
+      setPromptVisible(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -79,8 +103,8 @@ export default function ChangePasswordScreen({ navigation }) {
           onFocus={() => setFocusedInput('confirm')}
           onBlur={() => setFocusedInput('')}
         />
-        <TouchableOpacity style={[styles.button, { backgroundColor: theme.primary, shadowColor: theme.shadow }]} onPress={handleSubmit} activeOpacity={0.85}>
-          <Text style={[styles.buttonText, { color: theme.textInverse }]}>Change Password</Text>
+        <TouchableOpacity style={[styles.button, { backgroundColor: theme.primary, shadowColor: theme.shadow }]} onPress={handleSubmit} activeOpacity={0.85} disabled={loading}>
+          <Text style={[styles.buttonText, { color: theme.textInverse }]}>{loading ? 'Changing...' : 'Change Password'}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Text style={[styles.backBtnText, { color: theme.primary }]}>Back</Text>

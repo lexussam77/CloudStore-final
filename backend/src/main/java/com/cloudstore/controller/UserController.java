@@ -34,6 +34,23 @@ public class UserController {
         return ResponseEntity.ok("Account deleted successfully");
     }
 
+    @PostMapping("/change-password")
+    public ResponseEntity<Map<String, Object>> changePassword(@RequestBody Map<String, String> body) {
+        Map<String, Object> resp = new HashMap<>();
+        try {
+            String currentPassword = body.get("currentPassword");
+            String newPassword = body.get("newPassword");
+            userService.changePassword(currentPassword, newPassword);
+            resp.put("success", true);
+            resp.put("message", "Password changed successfully");
+            return ResponseEntity.ok(resp);
+        } catch (Exception e) {
+            resp.put("success", false);
+            resp.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(resp);
+        }
+    }
+
     @GetMapping("/debug/current-user")
     public ResponseEntity<Map<String, Object>> getCurrentUserDebug() {
         Map<String, Object> response = new HashMap<>();

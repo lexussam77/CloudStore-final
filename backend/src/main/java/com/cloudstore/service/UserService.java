@@ -6,6 +6,7 @@ import com.cloudstore.model.User;
 import com.cloudstore.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     private User getCurrentUserEntity() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -54,5 +56,15 @@ public class UserService {
     public void deleteAccount() {
         User user = getCurrentUserEntity();
         userRepository.delete(user);
+    }
+
+    @Transactional
+    public void changePassword(String currentPassword, String newPassword) {
+        User user = getCurrentUserEntity();
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 } 
