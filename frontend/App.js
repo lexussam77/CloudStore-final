@@ -15,7 +15,7 @@ import TermsOfServiceScreen from './screens/TermsOfServiceScreen';
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
 import OpenSourceScreen from './screens/OpenSourceScreen';
 import CCPAPreferencesScreen from './screens/CCPAPreferencesScreen';
-import { AuthProvider, AuthContext } from './screens/AuthContext';
+import { AuthProvider, AuthContext, NotificationProvider } from './screens/AuthContext';
 import { ActivityIndicator } from 'react-native';
 import AuthScreen from './screens/AuthScreen';
 import ManagePlanScreen from './screens/ManagePlanScreen';
@@ -26,7 +26,9 @@ import TwoFactorScreen from './screens/TwoFactorScreen';
 import CreditCardScreen from './screens/CreditCardScreen';
 import FileViewerScreen from './screens/FileViewerScreen';
 import DocumentScannerScreen from './screens/DocumentScannerScreen';
+import NotificationScreen from './screens/NotificationScreen';
 import { ThemeProvider, useTheme } from './theme/ThemeContext';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const Stack = createNativeStackNavigator();
 
@@ -63,6 +65,7 @@ function AppNavigator() {
       {jwt ? (
         <>
           <Stack.Screen name="MainTabs" component={BottomTabNavigation} />
+          <Stack.Screen name="NotificationScreen" component={NotificationScreen} />
   
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="Help" component={HelpScreen} />
@@ -95,12 +98,16 @@ function AppNavigator() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <NavigationContainer>
-          <AppNavigator />
-        </NavigationContainer>
-      </AuthProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <AuthProvider>
+          <NotificationProvider>
+            <NavigationContainer>
+              <AppNavigator />
+            </NavigationContainer>
+          </NotificationProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

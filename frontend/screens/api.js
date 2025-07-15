@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { notify } from './notificationHandler';
 
 export const API_BASE_URL =
   Platform.OS === 'web'
@@ -16,11 +17,38 @@ async function robustFetch(url, options = {}) {
     } else {
       data = await res.text();
     }
+    // Custom notification messages for important actions
+    const method = (options.method || 'GET').toUpperCase();
+    let customMessage = null;
+    let customType = 'success';
     if (!res.ok) {
+      // Error notification
+      if (url.includes('/files/upload')) customMessage = 'File upload failed.';
+      else if (url.includes('/files/rename')) customMessage = 'File rename failed.';
+      else if (url.includes('/files/permanent/')) customMessage = 'File deletion failed.';
+      else if (url.includes('/files/favorite/')) customMessage = 'Failed to update favorite.';
+      else if (url.includes('/files/download')) customMessage = 'File download failed.';
+      else if (url.includes('/files/compress')) customMessage = 'File compression failed.';
+      else if (url.includes('/folders')) customMessage = 'Folder operation failed.';
+      else customMessage = data?.error || data?.message || 'Network error';
+      notify(customMessage, 'error');
       return { success: false, error: data?.error || data?.message || data || 'Network error' };
+    }
+    // Success notifications for important actions
+    if (method === 'POST' || method === 'PUT' || method === 'DELETE') {
+      if (url.includes('/files/upload')) customMessage = 'File uploaded successfully!';
+      else if (url.includes('/files/rename')) customMessage = 'File renamed successfully!';
+      else if (url.includes('/files/permanent/')) customMessage = 'File deleted permanently.';
+      else if (url.includes('/files/favorite/')) customMessage = 'Favorite updated!';
+      else if (url.includes('/files/download')) customMessage = 'File downloaded!';
+      else if (url.includes('/files/compress')) customMessage = 'File compressed successfully!';
+      else if (url.includes('/folders')) customMessage = 'Folder operation successful!';
+      else customMessage = data?.message || 'Operation successful';
+      notify(customMessage, customType);
     }
     return { success: true, data };
   } catch (err) {
+    notify(err.message || 'Network error', 'error');
     return { success: false, error: err.message || 'Network error' };
   }
 }

@@ -5,7 +5,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
-
+import { useNotification } from './AuthContext';
 
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -26,6 +26,7 @@ export default function HomeScreen() {
   const heroAnim = useRef(new Animated.Value(0)).current;
   const recentAnim = useRef(new Animated.Value(0)).current;
   const navigation = useNavigation();
+  const { hasUnread, markAllRead } = useNotification();
 
   useEffect(() => {
     Animated.stagger(120, [
@@ -212,9 +213,20 @@ export default function HomeScreen() {
           contentContainerStyle={{ paddingBottom: 80 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshFiles} tintColor={theme.primary} />}
         >
-          {/* Home Title */}
-          <View style={styles.homeTitleContainer}>
-            <Text style={[styles.homeTitle, { color: theme.text }]}>Home</Text>
+          {/* Header Row */}
+          <View style={styles.headerRow}>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>Home</Text>
+            <View style={{ flex: 1 }} />
+            <TouchableOpacity
+              style={styles.bellButton}
+              onPress={() => {
+                markAllRead();
+                navigation.navigate('NotificationScreen');
+              }}
+            >
+              <Feather name="bell" size={26} color={theme.primary} />
+              {hasUnread && <View style={styles.bellBlueTick} />}
+            </TouchableOpacity>
           </View>
           
           {/* Search Bar */}
@@ -1138,5 +1150,33 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.35)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 6,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    marginTop: 10,
+    marginBottom: 16,
+    paddingVertical: 8,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  bellButton: {
+    marginLeft: 12,
+    position: 'relative',
+    padding: 6,
+  },
+  bellBlueTick: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#2563eb',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
 }); 

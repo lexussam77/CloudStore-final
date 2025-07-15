@@ -3,10 +3,11 @@ import { Modal, View, Text, TouchableOpacity, StyleSheet, Animated } from 'react
 import { AntDesign } from '@expo/vector-icons';
 import { useEffect, useRef } from 'react';
 import { useTheme } from '../theme/ThemeContext';
+import { useNotification } from './AuthContext';
 
 export default function CustomPrompt({ visible, message, onClose, success = true }) {
   const { theme } = useTheme();
-  
+  const { addNotification } = useNotification();
   // Animation for icon pop
   const scaleAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -17,6 +18,8 @@ export default function CustomPrompt({ visible, message, onClose, success = true
         friction: 5,
         useNativeDriver: true,
       }).start();
+      // Send notification when prompt is shown
+      addNotification(message, success ? 'success' : 'error');
     }
   }, [visible]);
 

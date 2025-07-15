@@ -60,12 +60,8 @@ export default function ManagePlanScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={[styles.backArrow, { color: theme.text }]}>{'←'}</Text>
-        </TouchableOpacity>
-        <Text style={[styles.header, { color: theme.text }]}>Upgrade Plan</Text>
-      </View>
+      {/* Header removed as requested */}
+      <Text style={[styles.pageTitle, { color: theme.primary }]}>Choose Your CloudStore Plan</Text>
       <View style={styles.tabsRow}>
         {plans.map((plan, idx) => (
           <TouchableOpacity
@@ -139,6 +135,14 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     marginRight: 44, // Compensate for back arrow width to center the title
+  },
+  pageTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 10,
+    marginTop: 32,
+    letterSpacing: 0.2,
   },
   tabsRow: {
     flexDirection: 'row',
