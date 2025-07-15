@@ -1282,16 +1282,14 @@ export default function FilesScreen() {
               </View>
             </View>
           </Modal>
-          {/* Enhanced Empty State - Only show when no files and not in folders tab */}
-          {filteredFiles.length === 0 && folders.length === 0 && selectedCategory !== 'folders' && (
+          {/* Enhanced Empty State - Only show when no files and no folders and not in folders tab */}
+          {filteredFiles.length === 0 && folders.length === 0 && selectedCategory !== 'folders' && !loading && (
             <View style={styles.emptyStateContainer}>
-              <View style={[styles.emptyStateIconContainer, { backgroundColor: theme.primaryLight }]}>
+              <View style={[styles.emptyStateIconContainer, { backgroundColor: theme.primaryLight }]}> 
                 <Feather name="folder-open" size={48} color={theme.primary} />
               </View>
               <Text style={[styles.emptyStateTitle, { color: theme.text }]}>No files yet</Text>
-              <Text style={[styles.emptyStateSubtitle, { color: theme.textSecondary }]}>
-                Upload your first file to get started with CloudStore
-              </Text>
+              <Text style={[styles.emptyStateSubtitle, { color: theme.textSecondary }]}>Upload your first file to get started with CloudStore</Text>
               <TouchableOpacity 
                 style={[styles.emptyStateButton, { backgroundColor: theme.primary }]} 
                 onPress={() => setShowUploadModal(true)}
@@ -1320,15 +1318,13 @@ export default function FilesScreen() {
                         onMenuPress={() => handleMenuPress(folder, 'folder')}
                       />
                     ))
-                  ) : (
+                  ) : filteredFiles.length === 0 && !loading ? (
                     <View style={styles.emptyFolderState}>
-                      <View style={[styles.emptyStateIconContainer, { backgroundColor: theme.primaryLight }]}>
+                      <View style={[styles.emptyStateIconContainer, { backgroundColor: theme.primaryLight }]}> 
                         <Feather name="folder-plus" size={48} color={theme.primary} />
                       </View>
                       <Text style={[styles.emptyStateTitle, { color: theme.text }]}>No folders yet</Text>
-                      <Text style={[styles.emptyStateSubtitle, { color: theme.textSecondary }]}>
-                        Create your first folder to organize your files
-                      </Text>
+                      <Text style={[styles.emptyStateSubtitle, { color: theme.textSecondary }]}>Create your first folder to organize your files</Text>
                       <TouchableOpacity 
                         style={[styles.emptyStateButton, { backgroundColor: theme.primary }]} 
                         onPress={() => setShowFolderModal(true)}
@@ -1338,7 +1334,7 @@ export default function FilesScreen() {
                         <Text style={[styles.emptyStateButtonText, { color: theme.textInverse }]}>Create Folder</Text>
                       </TouchableOpacity>
                     </View>
-                  )}
+                  ) : null}
                 </View>
               )}
             </>
