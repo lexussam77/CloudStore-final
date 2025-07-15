@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
     marginTop: 16,
-    gap: 12,
+    gap: 4, // reduced from 12
     alignSelf: 'center',
   },
   input: {
@@ -189,13 +189,13 @@ const styles = StyleSheet.create({
     fontSize: 24,
     borderWidth: 1.5,
     textAlign: 'center',
-    width: 44,
-    height: 54,
+    width: 40, // reduced from 44
+    height: 64, // increased from 50
     fontWeight: 'bold',
     letterSpacing: 1,
     includeFontPadding: false,
     textAlignVertical: 'center',
-    marginHorizontal: 4,
+    marginHorizontal: 2, // reduced from 4
     backgroundColor: 'transparent',
   },
   inputFilled: {

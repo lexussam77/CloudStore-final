@@ -1,5 +1,5 @@
 import React, { useContext, useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SectionList, Alert, SafeAreaView, ScrollView, Image, Animated, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SectionList, Alert, SafeAreaView, ScrollView, Image, Animated, Modal, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import Feather from 'react-native-vector-icons/Feather';
 import { AuthContext } from './AuthContext';
@@ -7,6 +7,7 @@ import LogoutSVG from '../assets/images/undraw_log-out_2vod.svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIsFocused } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
+import { getCurrentUser } from './api';
 
 const user = {
   name: 'lazarus sam',
@@ -90,6 +91,35 @@ export default function AccountScreen({ navigation }) {
     }
   };
 
+  const [userProfile, setUserProfile] = useState({ name: '', email: '' });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = await AsyncStorage.getItem('jwt');
+        if (!token) {
+          setError('No token found.');
+          setLoading(false);
+          return;
+        }
+        const res = await getCurrentUser(token);
+        console.log('User profile response:', res);
+        if (res.success && res.data) {
+          setUserProfile({ name: res.data.name, email: res.data.email });
+        } else {
+          setError('Failed to fetch user profile.');
+        }
+      } catch (err) {
+        setError('Failed to fetch user profile.');
+      }
+      setLoading(false);
+    };
+    fetchUserProfile();
+  }, [isFocused]);
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Top Bar */}
@@ -113,8 +143,16 @@ export default function AccountScreen({ navigation }) {
                   <Feather name="edit-3" size={16} color={theme.textInverse} />
                 </View>
                 </TouchableOpacity>
-                <Text style={[styles.name, { color: theme.text }]}>{user.name}</Text>
-                <Text style={[styles.email, { color: theme.textSecondary }]}>{user.email}</Text>
+                {loading ? (
+                  <ActivityIndicator size="small" color={theme.primary} />
+                ) : error ? (
+                  <Text style={{ color: 'red' }}>{error}</Text>
+                ) : (
+                  <>
+                    <Text style={[styles.name, { color: theme.text }]}>{userProfile.name}</Text>
+                    <Text style={[styles.email, { color: theme.textSecondary }]}>{userProfile.email}</Text>
+                  </>
+                )}
         </Animated.View>
         
         {/* Plan and Storage Card */}

@@ -210,15 +210,6 @@ export default function AuthScreen({ navigation }) {
                 <TouchableOpacity onPress={flipCard} style={styles.link}>
                   <Text style={[styles.link, { color: theme.textSecondary }]}>Don't have an account? <Text style={{ color: theme.primary }}>Sign up</Text></Text>
                 </TouchableOpacity>
-                  <View style={styles.dividerRow}>
-                    <View style={[styles.divider, { backgroundColor: theme.border }]} />
-                    <Text style={[styles.dividerText, { color: theme.textSecondary }]}>or</Text>
-                    <View style={[styles.divider, { backgroundColor: theme.border }]} />
-                  </View>
-                <TouchableOpacity style={[styles.googleBtn, { backgroundColor: theme.card, borderColor: theme.border }]} activeOpacity={0.85} onPress={() => Alert.alert('Google Sign-In')}>
-                  <Image source={require('../assets/images/Google.png')} style={styles.googleLogo} />
-                  <Text style={[styles.googleBtnText, { color: theme.text }]}>Continue with Google</Text>
-                </TouchableOpacity>
               </View>
             )}
           </Animated.View>
@@ -271,15 +262,6 @@ export default function AuthScreen({ navigation }) {
                 </TouchableOpacity>
                 <TouchableOpacity onPress={flipCard} style={styles.link}>
                   <Text style={[styles.link, { color: theme.textSecondary }]}>Already have an account? <Text style={{ color: theme.primary }}>Log in</Text></Text>
-                </TouchableOpacity>
-                  <View style={styles.dividerRow}>
-                    <View style={[styles.divider, { backgroundColor: theme.border }]} />
-                    <Text style={[styles.dividerText, { color: theme.textSecondary }]}>or</Text>
-                    <View style={[styles.divider, { backgroundColor: theme.border }]} />
-                  </View>
-                <TouchableOpacity style={[styles.googleBtn, { backgroundColor: theme.card, borderColor: theme.border }]} activeOpacity={0.85} onPress={() => Alert.alert('Google Sign-In')}>
-                  <Image source={require('../assets/images/Google.png')} style={styles.googleLogo} />
-                  <Text style={[styles.googleBtnText, { color: theme.text }]}>Continue with Google</Text>
                 </TouchableOpacity>
               </View>
             )}
