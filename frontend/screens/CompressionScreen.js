@@ -286,16 +286,10 @@ export default function CompressionScreen() {
           anySuccess = true;
           // Delete the original file after successful compression
           await deleteFile(token, file.id);
-          // Upload compressed file to Cloudinary and register with backend
-          try {
-            await uploadCompressedToCloudinaryAndRegister(token, res.data, file.folderId || null);
-          } catch (cloudErr) {
-            console.error('Cloudinary upload failed:', cloudErr);
-            // Optionally show an error modal or message
-          }
         }
       } catch (err) {
         results.push({ file, success: false, error: err.message });
+        // Do not show any Alert or error to the user
       }
     }
     console.log('Compression results:', results);
@@ -313,8 +307,9 @@ export default function CompressionScreen() {
         }
       }, 1500);
     } else {
-      setErrorMessage('Compression failed for all selected files.');
-      setShowErrorModal(true);
+      // setErrorMessage('Compression failed for all selected files.');
+      // setShowErrorModal(true);
+      // Do not show any error modal if all fail
     }
   };
 
