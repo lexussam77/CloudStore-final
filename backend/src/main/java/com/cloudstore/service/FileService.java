@@ -29,6 +29,8 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +41,9 @@ public class FileService {
 
     @Value("${file.upload-dir:uploads}")
     private String uploadDir;
+
+    @Value("${CLOUDINARY_URL:}")
+    private String cloudinaryUrl;
 
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -157,6 +162,7 @@ public class FileService {
     }
 
     private FileResponse toResponse(File file) {
+        boolean isCompressed = file.getName() != null && file.getName().contains("_compressed");
         return new FileResponse(
                 file.getId(),
                 file.getName(),
@@ -166,7 +172,8 @@ public class FileService {
                 file.getFolder() != null ? file.getFolder().getId() : null,
                 file.getCreatedAt(),
                 file.getUpdatedAt(),
-                file.getUrl()
+                file.getUrl(),
+                isCompressed
         );
     }
 
@@ -355,6 +362,18 @@ public class FileService {
             .orElse(null);
     }
 
+    private Cloudinary getCloudinary() {
+        if (cloudinaryUrl != null && !cloudinaryUrl.isEmpty()) {
+            return new Cloudinary(cloudinaryUrl);
+        }
+        // fallback to explicit config if env var is not set
+        return new Cloudinary(ObjectUtils.asMap(
+            "cloud_name", "ds5gugfv0",
+            "api_key", "735146938571227",
+            "api_secret", "ywd7M8seRHCTf4YG6liBeN8Bw3E"
+        ));
+    }
+
     public CompressionResponse compressFile(User user, Long fileId, CompressionRequest request) {
         File originalFile = fileRepository.findByIdAndUser(fileId, user)
                 .orElseThrow(() -> new RuntimeException("File not found"));
@@ -369,7 +388,6 @@ public class FileService {
             float quality = request.getQuality() != null ? request.getQuality() : 0.7f;
             int bitrate = request.getBitrate() != null ? request.getBitrate() : 1000; // kbps default
             if ("image".equalsIgnoreCase(type)) {
-                // Use Thumbnailator for JPEG/PNG/WebP
                 String usedFormat = (format != null && !format.isEmpty()) ? format : extension;
                 int dotIndex = originalName.lastIndexOf('.');
                 if (dotIndex != -1) {
@@ -387,7 +405,6 @@ public class FileService {
                 compressedData = baos.toByteArray();
                 format = usedFormat;
             } else if ("video".equalsIgnoreCase(type)) {
-                // Use ffmpeg for video compression
                 String usedFormat = (format != null && !format.isEmpty()) ? format : extension;
                 int dotIndex = originalName.lastIndexOf('.');
                 if (dotIndex != -1) {
@@ -410,7 +427,6 @@ public class FileService {
                 java.nio.file.Files.deleteIfExists(tempOutput);
                 format = usedFormat;
             } else if ("archive".equalsIgnoreCase(type)) {
-                // Use Java zip for archiving
                 int dotIndex = originalName.lastIndexOf('.');
                 if (dotIndex != -1) {
                     compressedName = originalName.substring(0, dotIndex) + "_compressed.zip";
@@ -428,23 +444,22 @@ public class FileService {
             } else {
                 throw new RuntimeException("Unsupported compression type");
             }
-            // Save compressed file to disk
-            Path dirPath = Paths.get(uploadDir);
-            if (!Files.exists(dirPath)) {
-                Files.createDirectories(dirPath);
-            }
-            Path compressedFilePath = dirPath.resolve(compressedName);
-            Files.write(compressedFilePath, compressedData);
-
+            // Upload compressed file to Cloudinary
+            Cloudinary cloudinary = getCloudinary();
+            java.util.Map uploadResult = cloudinary.uploader().upload(compressedData, ObjectUtils.asMap(
+                "resource_type", "auto",
+                "public_id", compressedName
+            ));
+            String fileUrl = (String) uploadResult.get("secure_url");
             File compressedFile = File.builder()
                     .user(user)
                     .name(compressedName)
-                    .url(null) // No dummy URL; use download endpoint
+                    .url(fileUrl)
                     .size((long) compressedData.length)
                     .favourite(false)
                     .deleted(false)
                     .folder(originalFile.getFolder())
-                    .path(compressedFilePath.toString())
+                    .path(null)
                     .build();
             fileRepository.save(compressedFile);
             double compressionRatio = ((double) (originalFile.getSize() - compressedData.length) / originalFile.getSize()) * 100;

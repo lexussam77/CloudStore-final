@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, SectionList, Modal, TouchableWithoutFeedback, Alert, SafeAreaView, FlatList, ScrollView, Image, ActivityIndicator, Animated, RefreshControl, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, SectionList, Modal, TouchableWithoutFeedback, Alert, SafeAreaView, FlatList, ScrollView, Image, ActivityIndicator, Animated, RefreshControl, Platform, Linking } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import * as DocumentPicker from 'expo-document-picker';
 import { uploadFiles, searchFiles, createFolder, listFiles, listFolders, API_BASE_URL, renameFile, favoriteFile, deleteFile, downloadFile, getDownloadUrl, deleteFolder, renameFolder } from './api';
@@ -1102,6 +1102,26 @@ export default function FilesScreen() {
   };
 
   const handleFilePress = async (file) => {
+    if (file.isCompressed) {
+      if (file.url) {
+        try {
+          // Download the file to cache first
+          const fileName = file.name || 'compressed_file';
+          const cacheUri = FileSystem.cacheDirectory + fileName;
+          const downloadRes = await FileSystem.downloadAsync(file.url, cacheUri);
+          if (await Sharing.isAvailableAsync()) {
+            await Sharing.shareAsync(downloadRes.uri);
+          } else {
+            await Linking.openURL(downloadRes.uri);
+          }
+        } catch (err) {
+          Alert.alert('Error', 'Could not open file in external app.');
+        }
+      } else {
+        Alert.alert('Error', 'No URL available for this file.');
+      }
+      return;
+    }
     const extension = file.name.split('.').pop().toLowerCase();
     if (extension === 'pdf') {
       try {

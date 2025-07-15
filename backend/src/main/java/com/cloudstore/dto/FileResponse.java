@@ -18,4 +18,5 @@ public class FileResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String url;
+    private boolean isCompressed;
 } 

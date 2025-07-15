@@ -16,3 +16,4 @@ UPDATE notifications SET is_read = FALSE WHERE is_read IS NULL;
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
 CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read); 
+ALTER TABLE files ALTER COLUMN path DROP NOT NULL; 
