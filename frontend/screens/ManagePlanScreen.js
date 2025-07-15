@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Dimensions, Modal, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useTheme } from '../theme/ThemeContext';
+import { usePremium } from './PremiumContext';
 
 const plans = [
   {
@@ -47,6 +48,14 @@ export default function ManagePlanScreen() {
   const [selectedTab, setSelectedTab] = useState(0);
   const flatListRef = useRef();
   const navigation = useNavigation();
+  const { isPremium, premiumPlan, upgradeToPremium } = usePremium();
+
+  // Simulated payment modal state
+  const [showModal, setShowModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [network, setNetwork] = useState('MTN');
+  const [phone, setPhone] = useState('');
+  const [processing, setProcessing] = useState(false);
 
   const handleTabPress = (idx) => {
     setSelectedTab(idx);
@@ -56,6 +65,27 @@ export default function ManagePlanScreen() {
   const handleScroll = (event) => {
     const idx = Math.round(event.nativeEvent.contentOffset.x / (width * 0.85));
     setSelectedTab(idx);
+  };
+
+  const handleTryPlan = (plan) => {
+    setSelectedPlan(plan);
+    setShowModal(true);
+    setNetwork('MTN');
+    setPhone('');
+  };
+
+  const handleSimulatePayment = async () => {
+    if (!phone.match(/^\d{10}$/)) {
+      Alert.alert('Invalid Number', 'Please enter a valid 10-digit phone number.');
+      return;
+    }
+    setProcessing(true);
+    setTimeout(async () => {
+      await upgradeToPremium(selectedPlan, network, phone);
+      setProcessing(false);
+      setShowModal(false);
+      Alert.alert('Success', 'You are now a premium user!');
+    }, 1500);
   };
 
   return (
@@ -99,12 +129,47 @@ export default function ManagePlanScreen() {
               <Text style={[styles.bell, { color: theme.primary }]}>🔔</Text>
               <Text style={[styles.reminderText, { color: theme.primary }]}>Get a reminder before your trial ends</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.ctaButton, { backgroundColor: theme.primary, shadowColor: theme.shadow }]} onPress={() => navigation.navigate('CreditCard', { plan: item })}>
+            <TouchableOpacity style={[styles.ctaButton, { backgroundColor: theme.primary, shadowColor: theme.shadow }]} onPress={() => handleTryPlan(item)}>
               <Text style={[styles.ctaButtonText, { color: theme.textInverse }]}>Try free for 30 days</Text>
             </TouchableOpacity>
           </Animated.View>
         )}
       />
+      {/* Simulated Payment Modal */}
+      <Modal visible={showModal} transparent animationType="slide">
+        <View style={{ flex:1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent:'center', alignItems:'center' }}>
+          <View style={{ backgroundColor: theme.card, padding: 28, borderRadius: 22, width: 340, alignItems:'center', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 16, elevation: 8 }}>
+            <View style={{ alignItems: 'center', marginBottom: 10 }}>
+              <Text style={{ fontSize: 32, marginBottom: 2 }}>💳</Text>
+              <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.primary, marginBottom: 2 }}>Payment</Text>
+            </View>
+            <Text style={{ marginBottom: 8, color: theme.text, fontWeight: 'bold', fontSize: 15 }}>Select Mobile Money Network:</Text>
+            <View style={{ flexDirection: 'row', marginBottom: 16 }}>
+              {['MTN', 'Telecel'].map(nw => (
+                <TouchableOpacity key={nw} style={{ marginHorizontal: 10, paddingVertical: 10, paddingHorizontal: 18, borderRadius: 12, backgroundColor: network === nw ? theme.primary : theme.input, flexDirection: 'row', alignItems: 'center', borderWidth: network === nw ? 2 : 1, borderColor: network === nw ? theme.primary : theme.border }} onPress={() => setNetwork(nw)}>
+                  <Text style={{ fontSize: 18, marginRight: 6 }}>{nw === 'MTN' ? '📱' : '📶'}</Text>
+                  <Text style={{ color: network === nw ? theme.textInverse : theme.text, fontWeight: 'bold' }}>{nw}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TextInput
+              style={{ width: '100%', borderWidth: 1.5, borderColor: theme.primary, borderRadius: 10, padding: 14, marginBottom: 18, color: theme.text, backgroundColor: theme.input, fontSize: 16, fontWeight: '500', letterSpacing: 1 }}
+              placeholder="Phone Number (e.g. 0551234567)"
+              placeholderTextColor={theme.textSecondary}
+              keyboardType="number-pad"
+              value={phone}
+              onChangeText={setPhone}
+              maxLength={10}
+            />
+            <TouchableOpacity style={{ backgroundColor: theme.primary, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 40, marginBottom: 10, width: '100%', alignItems:'center', shadowColor: theme.shadow, shadowOpacity: 0.12, shadowRadius: 8, elevation: 2 }} onPress={handleSimulatePayment} disabled={processing}>
+              {processing ? <ActivityIndicator color={theme.textInverse} /> : <Text style={{ color: theme.textInverse, fontWeight: 'bold', fontSize: 16, letterSpacing: 0.5 }}>Pay Now</Text>}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowModal(false)} disabled={processing}>
+              <Text style={{ color: theme.primary, marginTop: 8, fontWeight: 'bold', fontSize: 15 }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       <TouchableOpacity style={[styles.freePlanButton, { backgroundColor: theme.secondary, borderColor: theme.border }]} onPress={() => navigation.goBack()}>
         <Text style={[styles.freePlanText, { color: theme.primary }]}>Continue with Free Plan</Text>
       </TouchableOpacity>
