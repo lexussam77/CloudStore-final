@@ -351,34 +351,6 @@ export default function CompressionScreen() {
                 onMenuPress={() => handleMenuPress(file)}
                 onStarPress={() => handleStarPress(file)}
               />
-              <TouchableOpacity
-                style={{ alignSelf: 'flex-end', marginRight: 24, marginTop: 2, backgroundColor: '#22c55e', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 6 }}
-                onPress={async () => {
-                  const token = await AsyncStorage.getItem('jwt');
-                  setCompressing(true);
-                  try {
-                    const res = await extractFile(token, file.id);
-                    if (res.success) {
-                      setSuccessMessage('File extracted successfully!');
-                      setShowSuccessModal(true);
-                      await fetchFiles();
-                      setTimeout(() => {
-                        setShowSuccessModal(false);
-                      }, 1500);
-                    } else {
-                      setErrorMessage(res.error || 'Extraction failed');
-                      setShowErrorModal(true);
-                    }
-                  } catch (err) {
-                    setErrorMessage(err.message || 'Extraction failed');
-                    setShowErrorModal(true);
-                  }
-                  setCompressing(false);
-                }}
-                disabled={compressing}
-              >
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Extract</Text>
-              </TouchableOpacity>
             </View>
           ))
         )}
