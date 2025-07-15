@@ -120,6 +120,8 @@ export default function FilesScreen() {
   const [uploadSuccessType, setUploadSuccessType] = useState('');
   const uploadSuccessScale = useRef(new Animated.Value(0)).current;
   const navigation = useNavigation();
+  const [showPropertiesModal, setShowPropertiesModal] = useState(false);
+  const [propertiesItem, setPropertiesItem] = useState(null);
 
   const handleMenuPress = (item, type) => {
     if (menuButtonRefs.current[item.id]) {
@@ -288,6 +290,10 @@ export default function FilesScreen() {
               }
             ]
           );
+        } else if (action === 'properties') {
+          setPropertiesItem(item);
+          setShowPropertiesModal(true);
+          return;
         }
     } else if (type === 'folder') {
       if (action === 'open') {
@@ -1398,6 +1404,10 @@ export default function FilesScreen() {
                     <Feather name="trash" size={24} color="crimson" />
                     <Text style={[styles.centeredMenuText, { color: 'crimson' }]}>Delete</Text>
                   </TouchableOpacity>
+                  <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('properties', selectedItem, 'file')}>
+                    <Feather name="info" size={24} color={theme.primary} />
+                    <Text style={[styles.centeredMenuText, { color: theme.text }]}>Properties</Text>
+                  </TouchableOpacity>
                 </>
               ) : (
                 <>
@@ -1577,6 +1587,33 @@ export default function FilesScreen() {
               </TouchableWithoutFeedback>
             </View>
           </TouchableWithoutFeedback>
+        </Modal>
+
+        {/* Properties Modal */}
+        <Modal
+          visible={showPropertiesModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowPropertiesModal(false)}
+        >
+          <TouchableOpacity style={[styles.menuOverlay, { backgroundColor: theme.overlay }]} onPress={() => setShowPropertiesModal(false)} activeOpacity={1}>
+            <View style={[styles.centeredMenuCard, { backgroundColor: theme.card, shadowColor: theme.shadow, minWidth: 280 }]}> 
+              <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 18, marginBottom: 12, textAlign: 'center' }}>File Properties</Text>
+              {propertiesItem && (
+                <>
+                  <Text style={{ color: theme.textSecondary, marginBottom: 4 }}><Text style={{ fontWeight: 'bold', color: theme.text }}>Name:</Text> {propertiesItem.name}</Text>
+                  <Text style={{ color: theme.textSecondary, marginBottom: 4 }}><Text style={{ fontWeight: 'bold', color: theme.text }}>Size:</Text> {propertiesItem.size ? `${(propertiesItem.size/1024).toFixed(2)} KB` : 'Unknown'}</Text>
+                  <Text style={{ color: theme.textSecondary, marginBottom: 4 }}><Text style={{ fontWeight: 'bold', color: theme.text }}>Type:</Text> {propertiesItem.name.split('.').pop().toUpperCase()}</Text>
+                  <Text style={{ color: theme.textSecondary, marginBottom: 4 }}><Text style={{ fontWeight: 'bold', color: theme.text }}>Created:</Text> {propertiesItem.createdAt ? new Date(propertiesItem.createdAt).toLocaleString() : 'Unknown'}</Text>
+                  <Text style={{ color: theme.textSecondary, marginBottom: 4 }}><Text style={{ fontWeight: 'bold', color: theme.text }}>Updated:</Text> {propertiesItem.updatedAt ? new Date(propertiesItem.updatedAt).toLocaleString() : 'Unknown'}</Text>
+                  {propertiesItem.url && <Text style={{ color: theme.textSecondary, marginBottom: 4 }} numberOfLines={1}><Text style={{ fontWeight: 'bold', color: theme.text }}>URL:</Text> {propertiesItem.url}</Text>}
+                </>
+              )}
+              <TouchableOpacity style={{ marginTop: 18, alignSelf: 'center' }} onPress={() => setShowPropertiesModal(false)}>
+                <Text style={{ color: theme.primary, fontWeight: 'bold', fontSize: 16 }}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
         </Modal>
     </SafeAreaView>
   );

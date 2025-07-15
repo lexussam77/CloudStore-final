@@ -229,7 +229,7 @@ export default function CompressionScreen() {
       if (type === 'image') {
         dto = { type: 'image', quality: qualityMap[compressionSettings.quality], format: compressionSettings.format };
       } else if (type === 'video') {
-        dto = { type: 'video', quality: qualityMap[compressionSettings.quality], format: compressionSettings.format };
+        dto = { type: 'video', bitrate: 1000, format: compressionSettings.format };
       } else {
         dto = { type: 'archive', format: compressionSettings.archiveFormat };
       }
@@ -308,28 +308,30 @@ export default function CompressionScreen() {
         <Text style={[styles.statsTitle, { color: theme.text }]}>Your Cloud Analytics</Text>
         <View style={styles.statsGrid}>
           <View style={[styles.statCard, { backgroundColor: theme.secondaryLight }]}> 
-            <Feather name="file" size={28} color="#2563eb" />
+            <Feather name="file" size={22} color="#2563eb" />
             <Text style={[styles.statNumber, { color: theme.text }]}>{totalFiles}</Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total Files</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: theme.secondaryLight }]}> 
-            <Feather name="archive" size={28} color="#22c55e" />
+            <Feather name="archive" size={22} color="#22c55e" />
             <Text style={[styles.statNumber, { color: theme.text }]}>{compressedFilesCount}</Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Compressed Files</Text>
           </View>
+        </View>
+        <View style={[styles.statsDivider, { backgroundColor: theme.border }]} />
+        <View style={styles.statsGrid}>
           <View style={[styles.statCard, { backgroundColor: theme.secondaryLight }]}> 
-            <Feather name="database" size={28} color="#a21caf" />
+            <Feather name="database" size={22} color="#a21caf" />
             <Text style={[styles.statNumber, { color: theme.text }]}>{formatBytes(totalSize)}</Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total Storage</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: theme.secondaryLight }]}> 
-            <Feather name="trending-down" size={28} color="#f59e42" />
+            <Feather name="trending-down" size={22} color="#f59e42" />
             <Text style={[styles.statNumber, { color: theme.text }]}>{formatBytes(spaceSaved)}</Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Est. Space Saved</Text>
           </View>
         </View>
       </View>
-      <View style={{ height: 18 }} />
       {/* Section Divider */}
       <View style={{ height: 1, backgroundColor: theme.border, marginHorizontal: 24, marginBottom: 18, opacity: 0.18, borderRadius: 1 }} />
       {/* Compressed Files Section */}
@@ -414,16 +416,17 @@ export default function CompressionScreen() {
           ))
         )}
         {/* Compress Button */}
-        {selectedFiles.length > 0 && (
-          <TouchableOpacity
-            style={[styles.batchButton, { backgroundColor: theme.primary, marginTop: 16 }]}
-            onPress={() => setShowOptionsModal(true)}
-            disabled={compressing}
-          >
-            <Feather name="archive" size={20} color={theme.textInverse} />
-            <Text style={[styles.batchButtonText, { color: theme.textInverse }]}>Compress Selected</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={[
+            styles.batchButton,
+            { backgroundColor: theme.primary, marginTop: 16, alignSelf: 'center', borderRadius: 16, shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 2 }
+          ]}
+          onPress={() => setShowOptionsModal(true)}
+          disabled={compressing}
+        >
+          <Feather name="archive" size={20} color={theme.textInverse} />
+          <Text style={[styles.batchButtonText, { color: theme.textInverse }]}>Compress Selected</Text>
+        </TouchableOpacity>
       </View>
       {/* Modals and overlays remain outside the ScrollView */}
       {showSuccessModal && (
@@ -507,39 +510,59 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   statsContainer: {
-    margin: 16,
-    borderRadius: 16,
-    padding: 20,
+    margin: 12,
+    borderRadius: 14,
+    padding: 10,
     shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    elevation: 2,
+    // backgroundColor: '#fff', // use theme.card in render
   },
   statsTitle: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 10,
+    textAlign: 'center',
+    letterSpacing: 0.2,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 8,
+    justifyContent: 'space-between',
   },
   statCard: {
     flex: 1,
-    minWidth: 80,
+    minWidth: 60,
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
+    padding: 8,
+    borderRadius: 10,
+    // backgroundColor: '#f8fafc', // use theme.secondaryLight in render
+    marginHorizontal: 2,
+    marginBottom: 6,
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginTop: 4,
+    marginTop: 2,
+    // color: '#222', // use theme.text in render
   },
   statLabel: {
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 10,
+    marginTop: 1,
+    // color: '#666', // use theme.textSecondary in render
+  },
+  statsDivider: {
+    height: 1,
+    // backgroundColor: '#e5e7eb', // use theme.border in render
+    marginVertical: 6,
+    borderRadius: 1,
+    opacity: 0.5,
   },
   section: {
     margin: 16,

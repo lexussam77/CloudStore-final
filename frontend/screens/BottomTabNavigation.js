@@ -109,7 +109,7 @@ export default function BottomTabNavigation({ navigation }) {
                     ]}>
                       <Feather
                         name={tab.icon}
-                        size={40}
+                        size={36}
                         color={'#000'}
                         style={styles.compressionIcon}
                       />
@@ -205,38 +205,39 @@ const styles = StyleSheet.create({
     // Color will be applied dynamically
   },
   compressionTabLabel: {
-    fontWeight: 'bold',
-    fontSize: 11,
-    marginTop: 4,
+    fontWeight: '600',
+    fontSize: 12,
+    marginTop: 2,
     textAlign: 'center',
-    maxWidth: 60,
+    maxWidth: 48,
+    color: '#222',
   },
   compressionTabButton: {
     zIndex: 2,
     marginTop: -18,
   },
   compressionIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#fff', // default white background
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#fff', // revert to white background
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: '#000', // black border
-    shadowColor: '#222', // dark shadow
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 10,
+    borderWidth: 2, // revert to thicker border
+    borderColor: '#000', // revert to black border
+    shadowColor: '#222',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 6,
   },
   compressionIconWrapActive: {
-    backgroundColor: '#f0f0f0', // light gray when active
+    backgroundColor: '#f0f0f0', // revert to light gray when active
     borderColor: '#000', // black border when active
   },
   compressionIcon: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
   },
   compressionIconShadow: {
     shadowColor: '#222', // dark shadow
