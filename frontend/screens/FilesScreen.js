@@ -1265,7 +1265,7 @@ export default function FilesScreen() {
           }
         >
             {/* Glassy Search Bar */}
-            <BlurView intensity={60} tint="dark" style={styles.glassSearchBar}>
+            <BlurView intensity={60} tint="dark" style={[styles.glassSearchBar, { backgroundColor: 'transparent', borderWidth: 0 }]}> 
               <Feather name="search" size={22} color="#b0c4de" style={styles.searchIcon} />
             <TextInput
                 style={[styles.glassSearchInput, { fontFamily: 'Inter_400Regular' }]}
@@ -1287,34 +1287,27 @@ export default function FilesScreen() {
               style={styles.segmentBarModern}
               contentContainerStyle={{ alignItems: 'center', paddingLeft: 18, paddingRight: 8 }}
             >
-              {categories.map(cat => {
-                const isSelected = selectedCategory === cat.key;
-                return (
-              <TouchableOpacity
-                key={cat.key}
-                style={[
-                      styles.segmentModernButton,
-                      isSelected ? styles.segmentModernButtonSelected : styles.segmentModernButtonUnselected,
-                ]}
-                    activeOpacity={0.85}
-                onPress={() => setSelectedCategory(cat.key)}
-              >
-                    <Text
-                      style={[
-                        {
-                          fontFamily: isSelected ? 'Inter_700Bold' : 'Inter_400Regular',
-                          fontSize: 16,
-                          fontWeight: isSelected ? '700' : '400',
-                          color: isSelected ? '#1a2340' : '#e0e6f3',
-                          letterSpacing: 0.1,
-                        },
-                      ]}
-                    >
-                      {cat.label}
-                    </Text>
-              </TouchableOpacity>
-                );
-              })}
+              {categories.map((cat) => (
+                <TouchableOpacity
+                  key={cat.key}
+                  style={[
+                    styles.segmentTab,
+                    selectedCategory === cat.key && [styles.segmentTabSelected, { borderBottomColor: theme.primary }],
+                  ]}
+                  onPress={() => setSelectedCategory(cat.key)}
+                >
+                  <Text
+                    style={{
+                      fontFamily: 'Inter_700Bold',
+                      fontSize: 16,
+                      color: '#fff',
+                      letterSpacing: 0.1,
+                    }}
+                  >
+                    {cat.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
           </ScrollView>
           {/* Sort Bar */}
           <View style={styles.sortBar}>
@@ -2755,5 +2748,18 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     marginLeft: 18,
+  },
+  segmentTab: {
+    paddingVertical: 8,
+    paddingHorizontal: 22,
+    borderRadius: 18,
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 60,
+    borderWidth: 0,
+  },
+  segmentTabSelected: {
+    borderBottomWidth: 2,
   },
 }); 
