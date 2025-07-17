@@ -8,6 +8,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { useNotification } from './AuthContext';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
+import FileItem from './FileItem';
 
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -229,18 +230,18 @@ export default function HomeScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 10, marginHorizontal: 24 }}>
             <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 28, color: '#fff', letterSpacing: 0.2 }}>Welcome back</Text>
             <TouchableOpacity
-              style={styles.bellButton}
+              style={[styles.bellButton, { padding: 12 }]} // Increased padding for better touch area
               onPress={() => {
                 markAllRead();
                 navigation.navigate('NotificationScreen');
               }}
             >
-              <Feather name="bell" size={26} color={theme.primary} />
+              <Feather name="bell" size={32} color={theme.primary} />
               {hasUnread && <View style={styles.bellBlueTick} />}
             </TouchableOpacity>
           </View>
           {/* Glassy Search Bar */}
-          <BlurView intensity={60} tint="dark" style={styles.glassySearchBarWrap}>
+          <BlurView intensity={60} tint="dark" style={[styles.glassySearchBarWrap, { backgroundColor: 'transparent', borderWidth: 0 }]}> 
             <Feather name="search" size={20} color={theme.textSecondary} style={styles.searchIcon} />
             <TextInput
               style={[styles.searchInput, { color: theme.searchText, fontFamily: 'Inter_400Regular' }]}
@@ -331,141 +332,21 @@ export default function HomeScreen() {
             </Animated.View>
           )}
           
-          {/* Starred Section */}
-          {starredFiles.length > 0 && (
-            <BlurView intensity={90} tint="dark" style={styles.outerPadGlass}>
-              <Text style={[styles.sectionTitle, { color: theme.text, fontFamily: 'Inter_700Bold' }]}>Starred Files</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentFilesList}>
-                {starredFiles.map(item => {
-                  const preview = getFilePreview(item.file);
-                  return (
-                    <BlurView intensity={80} tint="dark" style={styles.filePadGlass} key={item.id}>
-                      <TouchableOpacity style={styles.filePadTouchable} onPress={() => handleFilePress(item.file)} activeOpacity={0.8}>
-                        <View style={styles.filePreviewContainer}>
-                          {preview?.type === 'image' ? (
-                            <Image 
-                              source={{ uri: preview.source }} 
-                              style={styles.filePreviewImage}
-                              resizeMode="cover"
-                            />
-                          ) : preview?.type === 'video' ? (
-                            <View style={styles.videoPreviewContainer}>
-                              <Image 
-                                source={{ uri: preview.source }} 
-                                style={styles.filePreviewImage}
-                                resizeMode="cover"
-                              />
-                              <View style={[styles.videoPlayOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.6)' }]}> 
-                                <Feather name="play" size={16} color="#fff" />
-                              </View>
-                            </View>
-                          ) : preview?.type === 'audio' ? (
-                            <View style={[styles.audioPreviewContainer, { backgroundColor: theme.primary }]}> 
-                              <View style={styles.sketchAudio}>
-                                <View style={[styles.sketchWave, { backgroundColor: theme.textInverse }]} />
-                                <View style={[styles.sketchWave, { backgroundColor: theme.textInverse, width: '60%' }]} />
-                                <View style={[styles.sketchWave, { backgroundColor: theme.textInverse, width: '80%' }]} />
-                              </View>
-                            </View>
-                          ) : preview?.type === 'pdf' ? (
-                            <View style={[styles.pdfPreviewContainer, { backgroundColor: '#ff4444' }]}> 
-                              <View style={styles.sketchDocument}>
-                                <View style={[styles.sketchPage, { backgroundColor: '#fff' }]} />
-                                <View style={[styles.sketchLine, { backgroundColor: '#fff', width: '80%' }]} />
-                                <View style={[styles.sketchLine, { backgroundColor: '#fff', width: '60%' }]} />
-                              </View>
-                            </View>
-                          ) : preview?.type === 'text' ? (
-                            <View style={[styles.textPreviewContainer, { backgroundColor: theme.primary }]}> 
-                              <View style={styles.sketchText}>
-                                <View style={[styles.sketchTextLine, { backgroundColor: theme.textInverse }]} />
-                                <View style={[styles.sketchTextLine, { backgroundColor: theme.textInverse, width: '70%' }]} />
-                                <View style={[styles.sketchTextLine, { backgroundColor: theme.textInverse, width: '90%' }]} />
-                              </View>
-                            </View>
-                          ) : (
-                            <Image source={{ uri: item.thumb }} style={styles.recentFileThumbImg} />
-                          )}
-                        </View>
-                        <Text style={[styles.recentFileName, { color: theme.text, fontFamily: 'Inter_400Regular' }]} numberOfLines={1}>{item.name}</Text>
-                        <Text style={[styles.recentFileMeta, { color: theme.textSecondary, fontFamily: 'Inter_400Regular' }]}>{item.modified}</Text>
-                        <TouchableOpacity style={styles.menuButton} activeOpacity={0.7}>
-                          <Feather name="more-vertical" size={20} color={theme.textSecondary} />
-                        </TouchableOpacity>
-                      </TouchableOpacity>
-                    </BlurView>
-                  );
-                })}
-              </ScrollView>
-            </BlurView>
+          {/* Recent Files Section - Only show this section */}
+          {recentFiles.length > 0 && (
+            <View style={{ marginHorizontal: 12, marginBottom: 18 }}>
+              <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 20, color: '#fff', letterSpacing: 0.2, marginLeft: 8, marginBottom: 8 }}>Recent Files</Text>
+              {recentFiles.map(item => (
+                <FileItem
+                  key={item.id}
+                  item={item.file}
+                  onPress={() => handleFilePress(item.file)}
+                  onMenuPress={() => {}}
+                  onStarPress={() => {}}
+                />
+              ))}
+            </View>
           )}
-          
-          {/* Recent Files Horizontal Scroll */}
-          <BlurView intensity={90} tint="dark" style={styles.outerPadGlass}>
-            <Text style={[styles.sectionTitle, { color: theme.text, fontFamily: 'Inter_700Bold' }]}>Recent Files</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentFilesList}>
-              {recentFiles.map(item => {
-                const preview = getFilePreview(item.file);
-                return (
-                  <BlurView intensity={80} tint="dark" style={styles.filePadGlass} key={item.id}>
-                    <TouchableOpacity style={styles.filePadTouchable} onPress={() => handleFilePress(item.file)} activeOpacity={0.8}>
-                      <View style={styles.filePreviewContainer}>
-                        {preview?.type === 'image' ? (
-                          <Image 
-                            source={{ uri: preview.source }} 
-                            style={styles.filePreviewImage}
-                            resizeMode="cover"
-                          />
-                        ) : preview?.type === 'video' ? (
-                          <View style={styles.videoPreviewContainer}>
-                            <Image 
-                              source={{ uri: preview.source }} 
-                              style={styles.filePreviewImage}
-                              resizeMode="cover"
-                            />
-                            <View style={[styles.videoPlayOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.6)' }]}> 
-                              <Feather name="play" size={16} color="#fff" />
-                            </View>
-                          </View>
-                        ) : preview?.type === 'audio' ? (
-                          <View style={[styles.audioPreviewContainer, { backgroundColor: theme.primary }]}> 
-                            <View style={styles.sketchAudio}>
-                              <View style={[styles.sketchWave, { backgroundColor: theme.textInverse }]} />
-                              <View style={[styles.sketchWave, { backgroundColor: theme.textInverse, width: '60%' }]} />
-                              <View style={[styles.sketchWave, { backgroundColor: theme.textInverse, width: '80%' }]} />
-                            </View>
-                          </View>
-                        ) : preview?.type === 'pdf' ? (
-                          <View style={[styles.pdfPreviewContainer, { backgroundColor: '#ff4444' }]}> 
-                            <View style={styles.sketchDocument}>
-                              <View style={[styles.sketchPage, { backgroundColor: '#fff' }]} />
-                              <View style={[styles.sketchLine, { backgroundColor: '#fff', width: '80%' }]} />
-                              <View style={[styles.sketchLine, { backgroundColor: '#fff', width: '60%' }]} />
-                            </View>
-                          </View>
-                        ) : preview?.type === 'text' ? (
-                          <View style={[styles.textPreviewContainer, { backgroundColor: theme.primary }]}> 
-                            <View style={styles.sketchText}>
-                              <View style={[styles.sketchTextLine, { backgroundColor: theme.textInverse }]} />
-                              <View style={[styles.sketchTextLine, { backgroundColor: theme.textInverse, width: '70%' }]} />
-                              <View style={[styles.sketchTextLine, { backgroundColor: theme.textInverse, width: '90%' }]} />
-                            </View>
-                          </View>
-                        ) : (
-                          <Image source={{ uri: item.thumb }} style={styles.recentFileThumbImg} />
-                        )}
-                      </View>
-                      <Text style={[styles.recentFileName, { color: theme.text, fontFamily: 'Inter_400Regular' }]} numberOfLines={1}>{item.name}</Text>
-                      <Text style={[styles.recentFileMeta, { color: theme.textSecondary, fontFamily: 'Inter_400Regular' }]}>{item.modified}</Text>
-                      <TouchableOpacity style={styles.menuButton} activeOpacity={0.7}>
-                        <Feather name="more-vertical" size={20} color={theme.textSecondary} />
-                      </TouchableOpacity>
-                    </TouchableOpacity>
-                  </BlurView>
-                );
-              })}
-            </ScrollView>
-          </BlurView>
           
           {/* Folders Grid */}
           {folders.length > 0 && (
