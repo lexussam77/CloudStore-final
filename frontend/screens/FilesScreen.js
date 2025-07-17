@@ -1366,22 +1366,10 @@ export default function FilesScreen() {
             </View>
           </Modal>
           {/* Enhanced Empty State - Only show when no files and no folders and not in folders tab */}
-          {filteredFiles.length === 0 && folders.length === 0 && selectedCategory !== 'folders' && !loading && (
-              <BlurView intensity={70} tint="dark" style={[styles.emptyGlassCard, { backgroundColor: 'rgba(20,40,80,0.32)', borderColor: 'rgba(255,255,255,0.10)' }]}> 
-                <View style={[styles.emptyGlassIconWrap, { backgroundColor: 'rgba(255,255,255,0.10)' }]}> 
-                  <Feather name="folder-open" size={56} color={theme.primary} />
-              </View>
-                <Text style={[styles.emptyGlassTitle, { color: theme.text, fontFamily: 'Inter_700Bold' }]}>No files yet</Text>
-                <Text style={[styles.emptyGlassSubtitle, { color: theme.textSecondary, fontFamily: 'Inter_400Regular' }]}>Upload your first file to get started with CloudStore</Text>
-              <TouchableOpacity 
-                  style={[styles.emptyGlassButton, { backgroundColor: theme.primary, borderRadius: 18, marginTop: 8, flexDirection: 'row', alignItems: 'center' }]}
-                onPress={() => setShowUploadModal(true)}
-                  activeOpacity={0.88}
-              >
-                  <Feather name="upload" size={20} color={theme.textInverse} style={{ marginRight: 8 }} />
-                  <Text style={[styles.emptyGlassButtonText, { color: theme.textInverse, fontFamily: 'Inter_700Bold', fontSize: 16 }]}>Upload Files</Text>
-              </TouchableOpacity>
-              </BlurView>
+          {selectedCategory === 'all' && filteredFiles.length === 0 && folders.length === 0 && !loading && (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 64 }}>
+              <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 20, color: theme.text, textAlign: 'center' }}>Upload to get started</Text>
+            </View>
           )}
           {/* Folders Grid - Only show in 'all' and 'folders' tabs */}
           {showFolders && (
@@ -1402,22 +1390,10 @@ export default function FilesScreen() {
                         textStyle={{ fontFamily: 'Inter_400Regular' }}
                       />
                     ))
-                  ) : filteredFiles.length === 0 && !loading ? (
-                      <BlurView intensity={70} tint="dark" style={styles.emptyGlassCard}>
-                        <View style={styles.emptyGlassIconWrap}>
-                          <Feather name="folder-plus" size={56} color="#fff" />
-                      </View>
-                        <Text style={styles.emptyGlassTitle}>No folders yet</Text>
-                        <Text style={styles.emptyGlassSubtitle}>Create your first folder to organize your files</Text>
-                      <TouchableOpacity 
-                          style={styles.emptyGlassButton}
-                        onPress={() => setShowFolderModal(true)}
-                          activeOpacity={0.88}
-                      >
-                          <Feather name="folder-plus" size={20} color="#2979FF" style={{ marginRight: 8 }} />
-                          <Text style={styles.emptyGlassButtonText}>Create Folder</Text>
-                      </TouchableOpacity>
-                      </BlurView>
+                  ) : filteredFiles.length === 0 && !loading && selectedCategory === 'folders' ? (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 64 }}>
+                      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 20, color: theme.text, textAlign: 'center' }}>Upload folder to get started</Text>
+                    </View>
                   ) : null}
                 </View>
               )}
@@ -1428,39 +1404,8 @@ export default function FilesScreen() {
             <View>
               {[...Array(4)].map((_, i) => <SkeletonLoader key={i} type="file" />)}
             </View>
-          ) : filteredFiles.length === 0 && selectedCategory !== 'folders' ? (
-            <View style={styles.emptyFileState}>
-              <View style={[styles.emptyStateIconContainer, { backgroundColor: theme.primaryLight }]}>
-                <Feather name="file" size={48} color={theme.primary} />
-              </View>
-              <Text style={[styles.emptyStateTitle, { color: theme.text }]}>No files found</Text>
-              <Text style={[styles.emptyStateSubtitle, { color: theme.textSecondary }]}>
-                {selectedCategory === 'favourites' ? 'No favorite files yet' : 
-                 selectedCategory === 'compressed' ? 'No compressed files yet' : 
-                 selectedCategory === 'scanned' ? 'No scanned documents yet' :
-                 'Upload files to see them here'}
-              </Text>
-              {selectedCategory === 'all' && (
-                <TouchableOpacity 
-                  style={[styles.emptyStateButton, { backgroundColor: theme.primary }]} 
-                  onPress={() => setShowUploadModal(true)}
-                  activeOpacity={0.85}
-                >
-                  <Feather name="upload" size={20} color={theme.textInverse} style={{ marginRight: 8 }} />
-                  <Text style={[styles.emptyStateButtonText, { color: theme.textInverse }]}>Upload Files</Text>
-                </TouchableOpacity>
-              )}
-              {selectedCategory === 'scanned' && (
-                <TouchableOpacity 
-                  style={[styles.emptyStateButton, { backgroundColor: theme.primary }]} 
-                  onPress={() => navigation.navigate('DocumentScanner')}
-                  activeOpacity={0.85}
-                >
-                  <Feather name="edit-3" size={20} color={theme.textInverse} style={{ marginRight: 8 }} />
-                  <Text style={[styles.emptyStateButtonText, { color: theme.textInverse }]}>Scan Document</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+          ) : filteredFiles.length === 0 && selectedCategory !== 'folders' && selectedCategory !== 'all' ? (
+            null
           ) : (
             filteredFiles.map((item, idx) => (
               <FileItem
@@ -1608,58 +1553,51 @@ export default function FilesScreen() {
           animationType="fade"
           onRequestClose={() => setShowFolderModal(false)}
         >
-          <TouchableWithoutFeedback onPress={() => setShowFolderModal(false)}>
-            <View style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}>
-              <TouchableWithoutFeedback>
-                <View style={[styles.modalContent, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
-                  <View style={styles.modalHeader}>
-                    <Feather name="folder-plus" size={24} color={theme.primary} />
-                    <Text style={[styles.modalTitle, { color: theme.text }]}>Create New Folder</Text>
-                  </View>
-                  
-                  <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
-                    Enter a name for your new folder
-                  </Text>
-                  
-                  <TextInput
-                    style={[styles.modalInput, { 
-                      backgroundColor: theme.inputBackground, 
-                      borderColor: theme.border, 
-                      color: theme.text,
-                      placeholderTextColor: theme.textSecondary 
-                    }]}
-                    value={newFolderName}
-                    onChangeText={setNewFolderName}
-                    placeholder="Folder name..."
-                    placeholderTextColor={theme.textSecondary}
-                    autoFocus={true}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    maxLength={50}
-                  />
-                  
-                  <View style={styles.modalButtons}>
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.modalButtonCancel, { backgroundColor: theme.secondary, borderColor: theme.border }]}
-                      onPress={() => {
-                        setShowFolderModal(false);
-                        setNewFolderName('');
-                      }}
-                    >
-                      <Text style={[styles.modalButtonCancelText, { color: theme.textSecondary }]}>Cancel</Text>
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: theme.primary }]}
-                      onPress={handleAddFolder}
-                    >
-                      <Text style={[styles.modalButtonConfirmText, { color: theme.textInverse }]}>Create Folder</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <BlurView intensity={120} tint="dark" style={{ ...StyleSheet.absoluteFillObject, zIndex: 1 }}>
+              <View style={{ flex: 1, backgroundColor: 'rgba(10,10,20,0.55)' }} />
+            </BlurView>
+            <TouchableWithoutFeedback onPress={() => setShowFolderModal(false)}>
+              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2 }} />
+            </TouchableWithoutFeedback>
+            <BlurView intensity={90} tint="dark" style={{ backgroundColor: 'rgba(20,40,80,0.32)', borderRadius: 28, padding: 32, alignItems: 'center', width: 340, borderWidth: 1.5, borderColor: theme.primary, zIndex: 3, shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                <Feather name="folder-plus" size={24} color={theme.primary} />
+                <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 20, color: theme.text, marginLeft: 12 }}>Create New Folder</Text>
+              </View>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, color: theme.textSecondary, marginBottom: 20, lineHeight: 22, textAlign: 'center' }}>
+                Enter a name for your new folder
+              </Text>
+              <TextInput
+                style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 12, padding: 16, fontSize: 16, color: theme.text, backgroundColor: theme.inputBackground, marginBottom: 24, width: '100%', fontFamily: 'Inter_400Regular' }}
+                value={newFolderName}
+                onChangeText={setNewFolderName}
+                placeholder="Folder name..."
+                placeholderTextColor={theme.textSecondary}
+                autoFocus={true}
+                autoCapitalize="none"
+                autoCorrect={false}
+                maxLength={50}
+              />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, width: '100%' }}>
+                <TouchableOpacity
+                  style={{ flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: theme.secondary, borderColor: theme.border, borderWidth: 1 }}
+                  onPress={() => {
+                    setShowFolderModal(false);
+                    setNewFolderName('');
+                  }}
+                >
+                  <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textSecondary, fontFamily: 'Inter_700Bold' }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: theme.primary }}
+                  onPress={handleAddFolder}
+                >
+                  <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textInverse, fontFamily: 'Inter_700Bold' }}>Create Folder</Text>
+                </TouchableOpacity>
+              </View>
+            </BlurView>
+          </View>
         </Modal>
 
         {/* Success Modal */}
