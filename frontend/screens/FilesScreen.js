@@ -14,6 +14,14 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as MediaLibrary from 'expo-media-library';
 import { useTheme } from '../theme/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import { Text as RNText, TextInput as RNTextInput } from 'react-native';
+
+RNText.defaultProps = RNText.defaultProps || {};
+RNText.defaultProps.style = [{ fontFamily: 'Inter' }];
+RNTextInput.defaultProps = RNTextInput.defaultProps || {};
+RNTextInput.defaultProps.style = [{ fontFamily: 'Inter' }];
 
 const folders = [];
 const categories = [
@@ -76,6 +84,8 @@ function SkeletonLoader({ type = 'file' }) {
     </View>
   );
 }
+
+const DEEP_BLUE_GRADIENT = ['#0a0f1c', '#12203a', '#1a2a4f'];
 
 export default function FilesScreen() {
   const { theme } = useTheme();
@@ -1142,7 +1152,34 @@ export default function FilesScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={{ flex: 1 }}>
+        {/* Top half gradient background up to sort bar */}
+        <LinearGradient
+          colors={DEEP_BLUE_GRADIENT}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 320, // Adjust this value to match the sort bar's bottom
+            zIndex: 0,
+          }}
+        />
+        {/* Bottom half solid or faded gradient */}
+        <View
+          style={{
+            position: 'absolute',
+            top: 320, // Same as above
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: '#10182b', // Deep blue solid or faded gradient
+            zIndex: 0,
+          }}
+        />
+        {/* Main content, ensure zIndex: 1 so it's above gradients */}
+        <View style={{ flex: 1, zIndex: 1 }}>
       {/* Spinner overlay when uploading */}
       {uploading && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.overlay }}>
@@ -1200,7 +1237,7 @@ export default function FilesScreen() {
           </View>
         )}
         <ScrollView 
-          contentContainerStyle={{ paddingBottom: 40 }} 
+            contentContainerStyle={{ paddingBottom: 120, paddingTop: 0 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -1211,40 +1248,57 @@ export default function FilesScreen() {
             />
           }
         >
-          {/* Search Bar */}
-          <View style={[styles.searchBarWrap, { backgroundColor: theme.searchBackground }]}>
-            <Feather name="search" size={20} color={theme.searchPlaceholder} style={styles.searchIcon} />
+            {/* Glassy Search Bar */}
+            <BlurView intensity={60} tint="dark" style={styles.glassSearchBar}>
+              <Feather name="search" size={22} color="#b0c4de" style={styles.searchIcon} />
             <TextInput
-              style={[styles.searchInputModern, { color: theme.searchText }]}
+                style={[styles.glassSearchInput, { fontFamily: 'Inter_400Regular' }]}
               placeholder="Search files..."
-              placeholderTextColor={theme.searchPlaceholder}
+                placeholderTextColor="#b0c4de"
               value={searchQuery}
               onChangeText={handleSearch}
+                returnKeyType="search"
+                clearButtonMode="while-editing"
             />
-            <TouchableOpacity onPress={refreshFiles} style={{ padding: 8 }}>
-              <Feather name="refresh-cw" size={20} color={theme.primary} />
+              <TouchableOpacity onPress={refreshFiles} style={styles.searchRefreshBtn}>
+                <Feather name="refresh-cw" size={20} color="#2979FF" />
             </TouchableOpacity>
-          </View>
-          {/* Category Bar */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryBar}>
-            {categories.map(cat => (
+            </BlurView>
+            {/* Category Bar - Modern, Inter font, recreated from scratch */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.segmentBarModern}
+              contentContainerStyle={{ alignItems: 'center', paddingLeft: 18, paddingRight: 8 }}
+            >
+              {categories.map(cat => {
+                const isSelected = selectedCategory === cat.key;
+                return (
               <TouchableOpacity
                 key={cat.key}
                 style={[
-                  styles.categoryButton,
-                  { backgroundColor: theme.secondary },
-                  selectedCategory === cat.key && { backgroundColor: theme.primary },
+                      styles.segmentModernButton,
+                      isSelected ? styles.segmentModernButtonSelected : styles.segmentModernButtonUnselected,
                 ]}
-                activeOpacity={0.7}
+                    activeOpacity={0.85}
                 onPress={() => setSelectedCategory(cat.key)}
               >
-                <Text style={[
-                  styles.categoryButtonText,
-                  { color: theme.textSecondary },
-                  selectedCategory === cat.key && { color: theme.textInverse },
-                ]}>{cat.label}</Text>
+                    <Text
+                      style={[
+                        {
+                          fontFamily: isSelected ? 'Inter_700Bold' : 'Inter_400Regular',
+                          fontSize: 16,
+                          fontWeight: isSelected ? '700' : '400',
+                          color: isSelected ? '#1a2340' : '#e0e6f3',
+                          letterSpacing: 0.1,
+                        },
+                      ]}
+                    >
+                      {cat.label}
+                    </Text>
               </TouchableOpacity>
-            ))}
+                );
+              })}
           </ScrollView>
           {/* Sort Bar */}
           <View style={styles.sortBar}>
@@ -1260,45 +1314,45 @@ export default function FilesScreen() {
             animationType="slide"
             onRequestClose={() => setSortModalVisible(false)}
           >
-            <View style={[styles.sortModalOverlay, { backgroundColor: theme.overlay }]}>
-              <View style={[styles.sortModalCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
-                <Text style={[styles.sortModalTitle, { color: theme.text }]}>Sort by</Text>
-                <View style={[styles.sortModalDivider, { backgroundColor: theme.border }]} />
+              <View style={[styles.sortModalOverlay, { backgroundColor: 'rgba(0,0,0,0.18)' }]}> 
+                <View style={[styles.sortModalCard, { backgroundColor: '#fff', shadowColor: '#000' }]}> 
+                  <Text style={[styles.sortModalTitle, { color: '#222' }]}>Sort by</Text>
+                  <View style={[styles.sortModalDivider, { backgroundColor: '#eee' }]} />
                 {['type', 'date', 'size'].map(opt => (
                   <TouchableOpacity
                     key={opt}
-                    style={[styles.sortOptionBtn, { backgroundColor: theme.input }, sortOption === opt && [styles.sortOptionBtnSelected, { backgroundColor: theme.primary }]]}
+                      style={[styles.sortOptionBtn, sortOption === opt && styles.sortOptionBtnSelected]}
                     onPress={() => {
                       setSortOption(opt);
                       setSortModalVisible(false);
                     }}
                   >
-                    <Text style={[styles.sortOptionText, { color: theme.textSecondary }, sortOption === opt && [styles.sortOptionTextSelected, { color: theme.textInverse }]]}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</Text>
+                      <Text style={[styles.sortOptionText, sortOption === opt && styles.sortOptionTextSelected]}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</Text>
                   </TouchableOpacity>
                 ))}
                 <TouchableOpacity style={styles.sortModalCloseBtn} onPress={() => setSortModalVisible(false)}>
-                  <Text style={[styles.sortModalCloseText, { color: theme.primary }]}>Cancel</Text>
+                    <Text style={styles.sortModalCloseText}>Cancel</Text>
                 </TouchableOpacity>
               </View>
             </View>
           </Modal>
           {/* Enhanced Empty State - Only show when no files and no folders and not in folders tab */}
           {filteredFiles.length === 0 && folders.length === 0 && selectedCategory !== 'folders' && !loading && (
-            <View style={styles.emptyStateContainer}>
-              <View style={[styles.emptyStateIconContainer, { backgroundColor: theme.primaryLight }]}> 
-                <Feather name="folder-open" size={48} color={theme.primary} />
+              <BlurView intensity={70} tint="dark" style={styles.emptyGlassCard}>
+                <View style={styles.emptyGlassIconWrap}>
+                  <Feather name="folder-open" size={56} color="#fff" />
               </View>
-              <Text style={[styles.emptyStateTitle, { color: theme.text }]}>No files yet</Text>
-              <Text style={[styles.emptyStateSubtitle, { color: theme.textSecondary }]}>Upload your first file to get started with CloudStore</Text>
+                <Text style={styles.emptyGlassTitle}>No files yet</Text>
+                <Text style={styles.emptyGlassSubtitle}>Upload your first file to get started with CloudStore</Text>
               <TouchableOpacity 
-                style={[styles.emptyStateButton, { backgroundColor: theme.primary }]} 
+                  style={styles.emptyGlassButton}
                 onPress={() => setShowUploadModal(true)}
-                activeOpacity={0.85}
+                  activeOpacity={0.88}
               >
-                <Feather name="upload" size={20} color={theme.textInverse} style={{ marginRight: 8 }} />
-                <Text style={[styles.emptyStateButtonText, { color: theme.textInverse }]}>Upload Files</Text>
+                  <Feather name="upload" size={20} color="#2979FF" style={{ marginRight: 8 }} />
+                  <Text style={styles.emptyGlassButtonText}>Upload Files</Text>
               </TouchableOpacity>
-            </View>
+              </BlurView>
           )}
           {/* Folders Grid - Only show in 'all' and 'folders' tabs */}
           {showFolders && (
@@ -1316,24 +1370,25 @@ export default function FilesScreen() {
                         item={folder}
                         onPress={() => handleFolderPress(folder)}
                         onMenuPress={() => handleMenuPress(folder, 'folder')}
+                        textStyle={{ fontFamily: 'Inter_400Regular' }}
                       />
                     ))
                   ) : filteredFiles.length === 0 && !loading ? (
-                    <View style={styles.emptyFolderState}>
-                      <View style={[styles.emptyStateIconContainer, { backgroundColor: theme.primaryLight }]}> 
-                        <Feather name="folder-plus" size={48} color={theme.primary} />
+                      <BlurView intensity={70} tint="dark" style={styles.emptyGlassCard}>
+                        <View style={styles.emptyGlassIconWrap}>
+                          <Feather name="folder-plus" size={56} color="#fff" />
                       </View>
-                      <Text style={[styles.emptyStateTitle, { color: theme.text }]}>No folders yet</Text>
-                      <Text style={[styles.emptyStateSubtitle, { color: theme.textSecondary }]}>Create your first folder to organize your files</Text>
+                        <Text style={styles.emptyGlassTitle}>No folders yet</Text>
+                        <Text style={styles.emptyGlassSubtitle}>Create your first folder to organize your files</Text>
                       <TouchableOpacity 
-                        style={[styles.emptyStateButton, { backgroundColor: theme.primary }]} 
+                          style={styles.emptyGlassButton}
                         onPress={() => setShowFolderModal(true)}
-                        activeOpacity={0.85}
+                          activeOpacity={0.88}
                       >
-                        <Feather name="folder-plus" size={20} color={theme.textInverse} style={{ marginRight: 8 }} />
-                        <Text style={[styles.emptyStateButtonText, { color: theme.textInverse }]}>Create Folder</Text>
+                          <Feather name="folder-plus" size={20} color="#2979FF" style={{ marginRight: 8 }} />
+                          <Text style={styles.emptyGlassButtonText}>Create Folder</Text>
                       </TouchableOpacity>
-                    </View>
+                      </BlurView>
                   ) : null}
                 </View>
               )}
@@ -1396,57 +1451,58 @@ export default function FilesScreen() {
           animationType="fade"
           onRequestClose={closeMenu}
         >
-          <TouchableOpacity style={[styles.menuOverlay, { backgroundColor: theme.overlay }]} onPress={closeMenu} activeOpacity={1}>
-            <View style={[styles.centeredMenuCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}> 
+            <View style={styles.fullModalOverlay}>
+              {/* Remove BlurView and dark overlay for this modal */}
+              <View style={[styles.settingsMenuCard, { backgroundColor: '#fff', borderColor: '#eee' }]}> 
               {menuType === 'file' ? (
                 <>
-                  <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('open', selectedItem, 'file')}>
-                    <Feather name="eye" size={24} color={theme.primary} />
-                    <Text style={[styles.centeredMenuText, { color: theme.text }]}>Open</Text>
+                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('open', selectedItem, 'file')}>
+                      <Feather name="eye" size={24} color="#2979FF" />
+                      <Text style={[styles.settingsMenuText, { color: '#222' }]}>Open</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('rename', selectedItem, 'file')}>
-                    <Feather name="edit-3" size={24} color={theme.primary} />
-                    <Text style={[styles.centeredMenuText, { color: theme.text }]}>Rename</Text>
+                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('rename', selectedItem, 'file')}>
+                      <Feather name="edit-3" size={24} color="#2979FF" />
+                      <Text style={[styles.settingsMenuText, { color: '#222' }]}>Rename</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('download', selectedItem, 'file')}>
-                    <Feather name="download" size={24} color={theme.primary} />
-                    <Text style={[styles.centeredMenuText, { color: theme.text }]}>Download</Text>
+                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('download', selectedItem, 'file')}>
+                      <Feather name="download" size={24} color="#2979FF" />
+                      <Text style={[styles.settingsMenuText, { color: '#222' }]}>Download</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('share', selectedItem, 'file')}>
-                    <Feather name="share-2" size={24} color={theme.primary} />
-                    <Text style={[styles.centeredMenuText, { color: theme.text }]}>Share</Text>
+                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('share', selectedItem, 'file')}>
+                      <Feather name="share-2" size={24} color="#2979FF" />
+                      <Text style={[styles.settingsMenuText, { color: '#222' }]}>Share</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('delete', selectedItem, 'file')}>
-                    <Feather name="trash" size={24} color="crimson" />
-                    <Text style={[styles.centeredMenuText, { color: 'crimson' }]}>Delete</Text>
+                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('delete', selectedItem, 'file')}>
+                      <Feather name="trash" size={24} color="#ff4b5c" />
+                      <Text style={[styles.settingsMenuText, { color: '#ff4b5c' }]}>Delete</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('properties', selectedItem, 'file')}>
-                    <Feather name="info" size={24} color={theme.primary} />
-                    <Text style={[styles.centeredMenuText, { color: theme.text }]}>Properties</Text>
+                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('properties', selectedItem, 'file')}>
+                      <Feather name="info" size={24} color="#2979FF" />
+                      <Text style={[styles.settingsMenuText, { color: '#222' }]}>Properties</Text>
                   </TouchableOpacity>
                 </>
               ) : (
                 <>
-                  <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('open', selectedItem, 'folder')}>
-                    <Feather name="folder-open" size={24} color={theme.primary} />
-                    <Text style={[styles.centeredMenuText, { color: theme.text }]}>Open</Text>
+                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('open', selectedItem, 'folder')}>
+                      <Feather name="folder-open" size={24} color="#2979FF" />
+                      <Text style={[styles.settingsMenuText, { color: '#222' }]}>Open</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('rename', selectedItem, 'folder')}>
-                    <Feather name="edit-3" size={24} color={theme.primary} />
-                    <Text style={[styles.centeredMenuText, { color: theme.text }]}>Rename</Text>
+                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('rename', selectedItem, 'folder')}>
+                      <Feather name="edit-3" size={24} color="#2979FF" />
+                      <Text style={[styles.settingsMenuText, { color: '#222' }]}>Rename</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.centeredMenuItem} onPress={() => handleMenuAction('delete', selectedItem, 'folder')}>
-                    <Feather name="trash" size={24} color="crimson" />
-                    <Text style={[styles.centeredMenuText, { color: 'crimson' }]}>Delete</Text>
+                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('delete', selectedItem, 'folder')}>
+                      <Feather name="trash" size={24} color="#ff4b5c" />
+                      <Text style={[styles.settingsMenuText, { color: '#ff4b5c' }]}>Delete</Text>
                   </TouchableOpacity>
                 </>
               )}
             </View>
-          </TouchableOpacity>
+            </View>
         </Modal>
         {/* Plus Button and Upload Modal */}
         <TouchableOpacity
-          style={styles.plusButton}
+            style={[styles.plusButton, { bottom: 120 }]} // Move up from bottom: 64 to 120
           onPress={() => setShowUploadModal(true)}
           activeOpacity={0.85}
         >
@@ -1631,6 +1687,8 @@ export default function FilesScreen() {
             </View>
           </TouchableOpacity>
         </Modal>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -1958,7 +2016,7 @@ const styles = StyleSheet.create({
   },
   plusButton: {
     position: 'absolute',
-    bottom: 32,
+    bottom: 64,
     right: 24,
     backgroundColor: '#0061FF',
     borderRadius: 30,
@@ -2386,5 +2444,347 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 60,
     paddingHorizontal: 20,
+  },
+  glassSearchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 22,
+    marginHorizontal: 18,
+    marginBottom: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(20,40,80,0.32)',
+    borderWidth: 1.2,
+    borderColor: 'rgba(255,255,255,0.10)',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  glassSearchInput: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 17,
+    fontWeight: '500',
+    color: '#fff',
+    fontFamily: 'Inter',
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchRefreshBtn: {
+    padding: 8,
+    marginLeft: 4,
+    borderRadius: 16,
+    backgroundColor: 'rgba(41,121,255,0.08)',
+  },
+  categoryBar: {
+    marginBottom: 18,
+    marginLeft: 16,
+    flexDirection: 'row',
+    paddingVertical: 8,
+  },
+  categoryButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 24,
+    marginRight: 14,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+    minWidth: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryButtonSelected: {
+    backgroundColor: '#0061FF',
+    shadowColor: '#0061FF',
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  categoryButtonText: {
+    color: '#222',
+    fontWeight: 'bold',
+    fontSize: 16,
+    fontFamily: 'System',
+    letterSpacing: 0.2,
+  },
+  categoryButtonTextSelected: {
+    color: '#fff',
+  },
+  segmentBarModern: {
+    flexDirection: 'row',
+    paddingVertical: 0,
+    marginHorizontal: 0,
+    marginBottom: 18,
+    backgroundColor: 'transparent',
+  },
+  segmentModernButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 22,
+    borderRadius: 18,
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 60,
+    borderWidth: 0,
+  },
+  segmentModernButtonSelected: {
+    backgroundColor: '#fff',
+  },
+  segmentModernButtonUnselected: {
+    backgroundColor: 'rgba(255,255,255,0.10)',
+  },
+  segmentModernText: {
+    fontSize: 16,
+    fontFamily: 'Inter',
+    fontWeight: '600',
+    letterSpacing: 0.1,
+  },
+  segmentModernTextSelected: {
+    color: '#1a2340',
+    fontWeight: '700',
+    fontFamily: 'Inter',
+  },
+  segmentModernTextUnselected: {
+    color: '#e0e6f3',
+    fontWeight: '600',
+    fontFamily: 'Inter',
+  },
+  emptyGlassCard: {
+    alignItems: 'center',
+    borderRadius: 28,
+    padding: 32,
+    marginHorizontal: 24,
+    marginVertical: 32,
+    backgroundColor: 'rgba(20,40,80,0.32)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.10)',
+    shadowOpacity: 0.10,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+  },
+  emptyGlassIconWrap: {
+    marginBottom: 16,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    borderRadius: 18,
+    padding: 18,
+  },
+  emptyGlassTitle: {
+    fontFamily: 'Inter',
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  emptyGlassSubtitle: {
+    fontFamily: 'Inter',
+    fontSize: 15,
+    color: '#e0e6f3',
+    marginBottom: 18,
+    textAlign: 'center',
+  },
+  emptyGlassButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    paddingVertical: 10,
+    paddingHorizontal: 22,
+    marginTop: 8,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  emptyGlassButtonText: {
+    fontFamily: 'Inter',
+    fontWeight: '700',
+    color: '#2979FF',
+    fontSize: 16,
+  },
+  glassModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(10,16,32,0.32)',
+  },
+  glassModalCard: {
+    borderRadius: 28,
+    paddingVertical: 36,
+    paddingHorizontal: 32,
+    minWidth: 260,
+    backgroundColor: 'rgba(20,40,80,0.32)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.10)',
+    alignItems: 'center',
+    shadowOpacity: 0.10,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
+  },
+  glassModalTitle: {
+    fontFamily: 'Inter',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  glassModalDivider: {
+    width: '100%',
+    height: 1.5,
+    marginBottom: 18,
+    borderRadius: 1,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+  },
+  glassModalOptionBtn: {
+    paddingVertical: 14,
+    paddingHorizontal: 22,
+    borderRadius: 16,
+    marginBottom: 10,
+    width: 160,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  glassModalOptionBtnSelected: {
+    backgroundColor: '#2979FF',
+  },
+  glassModalOptionText: {
+    fontFamily: 'Inter',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#e0e6f3',
+  },
+  glassModalOptionTextSelected: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  glassModalCloseBtn: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  glassModalCloseText: {
+    fontFamily: 'Inter',
+    fontWeight: '700',
+    fontSize: 17,
+    color: '#2979FF',
+    letterSpacing: 0.2,
+  },
+  glassMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 16,
+    marginBottom: 2,
+    width: 180,
+    justifyContent: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  glassMenuText: {
+    fontFamily: 'Inter',
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
+    marginLeft: 14,
+  },
+  fullModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+  },
+  fullModalBlur: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+  },
+  fullModalDarkOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(10,10,20,0.55)',
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 2,
+  },
+  solidModalCard: {
+    borderRadius: 28,
+    paddingVertical: 36,
+    paddingHorizontal: 32,
+    minWidth: 260,
+    backgroundColor: 'rgba(20,40,80,0.32)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.10)',
+    alignItems: 'center',
+    elevation: 12,
+  },
+  glassMenuCard: {
+    borderRadius: 24,
+    paddingVertical: 18,
+    paddingHorizontal: 0,
+    minWidth: 220,
+    backgroundColor: 'rgba(20,40,80,0.32)',
+    borderWidth: 1.2,
+    borderColor: 'rgba(255,255,255,0.10)',
+    alignItems: 'center',
+    elevation: 8,
+  },
+  glassMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 18,
+    marginBottom: 2,
+    width: 220,
+    justifyContent: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  glassMenuText: {
+    fontFamily: 'Inter',
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
+    marginLeft: 14,
+  },
+  settingsMenuCard: {
+    borderRadius: 28,
+    paddingVertical: 24,
+    paddingHorizontal: 0,
+    minWidth: 260,
+    backgroundColor: 'rgba(20,40,80,0.32)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.10)',
+    alignItems: 'center',
+    elevation: 12,
+  },
+  settingsMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 18,
+    marginBottom: 2,
+    width: 240,
+    justifyContent: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  settingsMenuText: {
+    fontFamily: 'Inter',
+    fontSize: 17,
+    color: '#fff',
+    fontWeight: '700',
+    marginLeft: 18,
   },
 }); 
