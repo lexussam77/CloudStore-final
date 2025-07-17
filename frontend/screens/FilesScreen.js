@@ -1303,55 +1303,68 @@ export default function FilesScreen() {
           {/* Sort Bar */}
           <View style={styles.sortBar}>
             <View style={{ flex: 1, height: 2, backgroundColor: theme.border, borderRadius: 1 }} />
-            <TouchableOpacity style={styles.sortIconBtn} onPress={() => setSortModalVisible(true)}>
+            <TouchableOpacity style={[styles.sortIconBtn, { backgroundColor: 'rgba(41,121,255,0.08)', borderColor: theme.primary }]} onPress={() => setSortModalVisible(true)}>
               <Feather name="sliders" size={22} color={theme.primary} />
             </TouchableOpacity>
           </View>
-          {/* Sort Modal */}
+          {/* Sort Modal - refined to match SettingsScreen confirmation modal */}
           <Modal
             visible={sortModalVisible}
             transparent
             animationType="slide"
             onRequestClose={() => setSortModalVisible(false)}
           >
-              <View style={[styles.sortModalOverlay, { backgroundColor: 'rgba(0,0,0,0.18)' }]}> 
-                <View style={[styles.sortModalCard, { backgroundColor: '#fff', shadowColor: '#000' }]}> 
-                  <Text style={[styles.sortModalTitle, { color: '#222' }]}>Sort by</Text>
-                  <View style={[styles.sortModalDivider, { backgroundColor: '#eee' }]} />
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              {/* Fullscreen BlurView for background blur */}
+              <BlurView intensity={120} tint="dark" style={{ ...StyleSheet.absoluteFillObject, zIndex: 1 }}>
+                <View style={{ flex: 1, backgroundColor: 'rgba(10,10,20,0.55)' }} />
+              </BlurView>
+              {/* Glassy card, more rounded, centered, modern */}
+              <BlurView intensity={90} tint="dark" style={{ backgroundColor: 'rgba(20,40,80,0.32)', borderRadius: 28, padding: 32, alignItems: 'center', width: 320, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.10)', zIndex: 2, shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 16 }}>
+                <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 20, color: theme.text, marginBottom: 18, textAlign: 'center' }}>Sort by</Text>
                 {['type', 'date', 'size'].map(opt => (
                   <TouchableOpacity
                     key={opt}
-                      style={[styles.sortOptionBtn, sortOption === opt && styles.sortOptionBtnSelected]}
+                    style={{
+                      width: '100%',
+                      paddingVertical: 16,
+                      borderRadius: 16,
+                      marginBottom: 12,
+                      alignItems: 'center',
+                      backgroundColor: sortOption === opt ? theme.primary : 'rgba(255,255,255,0.08)',
+                      borderWidth: sortOption === opt ? 2 : 0,
+                      borderColor: sortOption === opt ? theme.primary : 'transparent',
+                    }}
                     onPress={() => {
                       setSortOption(opt);
                       setSortModalVisible(false);
                     }}
                   >
-                      <Text style={[styles.sortOptionText, sortOption === opt && styles.sortOptionTextSelected]}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</Text>
+                    <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 16, color: sortOption === opt ? theme.textInverse : theme.text, textAlign: 'center' }}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</Text>
                   </TouchableOpacity>
                 ))}
-                <TouchableOpacity style={styles.sortModalCloseBtn} onPress={() => setSortModalVisible(false)}>
-                    <Text style={styles.sortModalCloseText}>Cancel</Text>
+                <TouchableOpacity style={{ marginTop: 8, alignItems: 'center', width: '100%', borderRadius: 16, paddingVertical: 16, backgroundColor: 'rgba(255,255,255,0.08)' }} onPress={() => setSortModalVisible(false)}>
+                  <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: theme.primary, textAlign: 'center' }}>Cancel</Text>
                 </TouchableOpacity>
-              </View>
+              </BlurView>
             </View>
           </Modal>
           {/* Enhanced Empty State - Only show when no files and no folders and not in folders tab */}
           {filteredFiles.length === 0 && folders.length === 0 && selectedCategory !== 'folders' && !loading && (
-              <BlurView intensity={70} tint="dark" style={styles.emptyGlassCard}>
-                <View style={styles.emptyGlassIconWrap}>
-                  <Feather name="folder-open" size={56} color="#fff" />
-              </View>
-                <Text style={styles.emptyGlassTitle}>No files yet</Text>
-                <Text style={styles.emptyGlassSubtitle}>Upload your first file to get started with CloudStore</Text>
-              <TouchableOpacity 
-                  style={styles.emptyGlassButton}
-                onPress={() => setShowUploadModal(true)}
+              <BlurView intensity={70} tint="dark" style={[styles.emptyGlassCard, { backgroundColor: 'rgba(20,40,80,0.32)', borderColor: 'rgba(255,255,255,0.10)' }]}> 
+                <View style={[styles.emptyGlassIconWrap, { backgroundColor: 'rgba(255,255,255,0.10)' }]}> 
+                  <Feather name="folder-open" size={56} color={theme.primary} />
+                </View>
+                <Text style={[styles.emptyGlassTitle, { color: theme.text, fontFamily: 'Inter_700Bold' }]}>No files yet</Text>
+                <Text style={[styles.emptyGlassSubtitle, { color: theme.textSecondary, fontFamily: 'Inter_400Regular' }]}>Upload your first file to get started with CloudStore</Text>
+                <TouchableOpacity 
+                  style={[styles.emptyGlassButton, { backgroundColor: theme.primary, borderRadius: 18, marginTop: 8, flexDirection: 'row', alignItems: 'center' }]}
+                  onPress={() => setShowUploadModal(true)}
                   activeOpacity={0.88}
-              >
-                  <Feather name="upload" size={20} color="#2979FF" style={{ marginRight: 8 }} />
-                  <Text style={styles.emptyGlassButtonText}>Upload Files</Text>
-              </TouchableOpacity>
+                >
+                  <Feather name="upload" size={20} color={theme.textInverse} style={{ marginRight: 8 }} />
+                  <Text style={[styles.emptyGlassButtonText, { color: theme.textInverse, fontFamily: 'Inter_700Bold', fontSize: 16 }]}>Upload Files</Text>
+                </TouchableOpacity>
               </BlurView>
           )}
           {/* Folders Grid - Only show in 'all' and 'folders' tabs */}
@@ -1451,53 +1464,57 @@ export default function FilesScreen() {
           animationType="fade"
           onRequestClose={closeMenu}
         >
-            <View style={styles.fullModalOverlay}>
-              {/* Remove BlurView and dark overlay for this modal */}
-              <View style={[styles.settingsMenuCard, { backgroundColor: '#fff', borderColor: '#eee' }]}> 
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              {/* Fullscreen BlurView for background blur */}
+              <BlurView intensity={120} tint="dark" style={{ ...StyleSheet.absoluteFillObject, zIndex: 1 }}>
+                <View style={{ flex: 1, backgroundColor: 'rgba(10,10,20,0.55)' }} />
+              </BlurView>
+              {/* Glassy card, more rounded, centered, modern */}
+              <BlurView intensity={90} tint="dark" style={{ backgroundColor: 'rgba(20,40,80,0.32)', borderRadius: 28, padding: 32, alignItems: 'center', width: 320, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.10)', zIndex: 2, shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 16 }}>
               {menuType === 'file' ? (
                 <>
-                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('open', selectedItem, 'file')}>
-                      <Feather name="eye" size={24} color="#2979FF" />
-                      <Text style={[styles.settingsMenuText, { color: '#222' }]}>Open</Text>
-                  </TouchableOpacity>
-                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('rename', selectedItem, 'file')}>
-                      <Feather name="edit-3" size={24} color="#2979FF" />
-                      <Text style={[styles.settingsMenuText, { color: '#222' }]}>Rename</Text>
-                  </TouchableOpacity>
-                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('download', selectedItem, 'file')}>
-                      <Feather name="download" size={24} color="#2979FF" />
-                      <Text style={[styles.settingsMenuText, { color: '#222' }]}>Download</Text>
-                  </TouchableOpacity>
-                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('share', selectedItem, 'file')}>
-                      <Feather name="share-2" size={24} color="#2979FF" />
-                      <Text style={[styles.settingsMenuText, { color: '#222' }]}>Share</Text>
-                  </TouchableOpacity>
-                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('delete', selectedItem, 'file')}>
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 12, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('open', selectedItem, 'file')}>
+                      <Feather name="eye" size={24} color={theme.primary} />
+                      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: theme.text, marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Open</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 12, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('rename', selectedItem, 'file')}>
+                      <Feather name="edit-3" size={24} color={theme.primary} />
+                      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: theme.text, marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Rename</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 12, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('download', selectedItem, 'file')}>
+                      <Feather name="download" size={24} color={theme.primary} />
+                      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: theme.text, marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Download</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 12, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('share', selectedItem, 'file')}>
+                      <Feather name="share-2" size={24} color={theme.primary} />
+                      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: theme.text, marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Share</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 12, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('delete', selectedItem, 'file')}>
                       <Feather name="trash" size={24} color="#ff4b5c" />
-                      <Text style={[styles.settingsMenuText, { color: '#ff4b5c' }]}>Delete</Text>
-                  </TouchableOpacity>
-                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('properties', selectedItem, 'file')}>
-                      <Feather name="info" size={24} color="#2979FF" />
-                      <Text style={[styles.settingsMenuText, { color: '#222' }]}>Properties</Text>
-                  </TouchableOpacity>
+                      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: '#ff4b5c', marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Delete</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 0, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('properties', selectedItem, 'file')}>
+                      <Feather name="info" size={24} color={theme.primary} />
+                      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: theme.text, marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Properties</Text>
+                    </TouchableOpacity>
                 </>
               ) : (
                 <>
-                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('open', selectedItem, 'folder')}>
-                      <Feather name="folder-open" size={24} color="#2979FF" />
-                      <Text style={[styles.settingsMenuText, { color: '#222' }]}>Open</Text>
-                  </TouchableOpacity>
-                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('rename', selectedItem, 'folder')}>
-                      <Feather name="edit-3" size={24} color="#2979FF" />
-                      <Text style={[styles.settingsMenuText, { color: '#222' }]}>Rename</Text>
-                  </TouchableOpacity>
-                    <TouchableOpacity style={styles.settingsMenuItem} onPress={() => handleMenuAction('delete', selectedItem, 'folder')}>
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 12, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('open', selectedItem, 'folder')}>
+                      <Feather name="folder-open" size={24} color={theme.primary} />
+                      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: theme.text, marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Open</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 12, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('rename', selectedItem, 'folder')}>
+                      <Feather name="edit-3" size={24} color={theme.primary} />
+                      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: theme.text, marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Rename</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 0, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('delete', selectedItem, 'folder')}>
                       <Feather name="trash" size={24} color="#ff4b5c" />
-                      <Text style={[styles.settingsMenuText, { color: '#ff4b5c' }]}>Delete</Text>
-                  </TouchableOpacity>
+                      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: '#ff4b5c', marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Delete</Text>
+                    </TouchableOpacity>
                 </>
               )}
-            </View>
+              </BlurView>
             </View>
         </Modal>
         {/* Plus Button and Upload Modal */}
@@ -1514,9 +1531,18 @@ export default function FilesScreen() {
           animationType="fade"
           onRequestClose={() => setShowUploadModal(false)}
         >
-          <TouchableOpacity style={[styles.overlay, { backgroundColor: 'rgba(0, 0, 0, 0.4)' }]} onPress={() => setShowUploadModal(false)} activeOpacity={1}>
-            <RadialMenu onPress={handleOptionPress} />
-          </TouchableOpacity>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            {/* Fullscreen BlurView for background blur */}
+            <BlurView intensity={120} tint="dark" style={{ ...StyleSheet.absoluteFillObject, zIndex: 1 }}>
+              <View style={{ flex: 1, backgroundColor: 'rgba(10,10,20,0.55)' }} />
+            </BlurView>
+            {/* RadialMenu glassy card, more rounded, centered, modern */}
+            <View style={{ zIndex: 2, alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+              <View style={{ borderRadius: 38, overflow: 'hidden', backgroundColor: 'rgba(20,40,80,0.32)', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.10)', padding: 16, alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.10, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 12 }}>
+                <RadialMenu onPress={handleOptionPress} />
+              </View>
+            </View>
+          </View>
         </Modal>
 
         {/* Rename Modal */}
@@ -1526,50 +1552,44 @@ export default function FilesScreen() {
           animationType="fade"
           onRequestClose={() => setShowRenameModal(false)}
         >
-          <TouchableWithoutFeedback onPress={() => setShowRenameModal(false)}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback>
-                <View style={styles.modalContent}>
-                  <View style={styles.modalHeader}>
-                    <Feather name="edit-3" size={24} color="#2563eb" />
-                    <Text style={styles.modalTitle}>
-                      Rename {(!renameItem?.url && !renameItem?.size && !renameItem?.type) ? 'Folder' : 'File'}
-                    </Text>
-                  </View>
-                  
-                  <Text style={styles.modalSubtitle}>
-                    Enter a new name for "{renameItem?.name}"
-                  </Text>
-                  
-                  <TextInput
-                    style={styles.modalInput}
-                    value={newName}
-                    onChangeText={setNewName}
-                    placeholder="Enter new name"
-                    autoFocus={true}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                  
-                  <View style={styles.modalButtons}>
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.modalButtonCancel]}
-                      onPress={() => setShowRenameModal(false)}
-                    >
-                      <Text style={styles.modalButtonCancelText}>Cancel</Text>
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.modalButtonConfirm]}
-                      onPress={handleRename}
-                    >
-                      <Text style={styles.modalButtonConfirmText}>Rename</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <BlurView intensity={120} tint="dark" style={{ ...StyleSheet.absoluteFillObject, zIndex: 1 }}>
+              <View style={{ flex: 1, backgroundColor: 'rgba(10,10,20,0.55)' }} />
+            </BlurView>
+            <BlurView intensity={90} tint="dark" style={{ backgroundColor: 'rgba(20,40,80,0.32)', borderRadius: 28, padding: 32, alignItems: 'center', width: 340, borderWidth: 1.5, borderColor: theme.primary, zIndex: 2, shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                <Feather name="edit-3" size={24} color={theme.primary} />
+                <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 20, color: theme.text, marginLeft: 12 }}>Rename {(!renameItem?.url && !renameItem?.size && !renameItem?.type) ? 'Folder' : 'File'}</Text>
+              </View>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, color: theme.textSecondary, marginBottom: 20, lineHeight: 22, textAlign: 'center' }}>
+                Enter a new name for "{renameItem?.name}"
+              </Text>
+              <TextInput
+                style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 12, padding: 16, fontSize: 16, color: theme.text, backgroundColor: theme.inputBackground, marginBottom: 24, width: '100%', fontFamily: 'Inter_400Regular' }}
+                value={newName}
+                onChangeText={setNewName}
+                placeholder="Enter new name"
+                placeholderTextColor={theme.textSecondary}
+                autoFocus={true}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, width: '100%' }}>
+                <TouchableOpacity
+                  style={{ flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: theme.secondary, borderColor: theme.border, borderWidth: 1 }}
+                  onPress={() => setShowRenameModal(false)}
+                >
+                  <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textSecondary, fontFamily: 'Inter_700Bold' }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: theme.primary }}
+                  onPress={handleRename}
+                >
+                  <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textInverse, fontFamily: 'Inter_700Bold' }}>Rename</Text>
+                </TouchableOpacity>
+              </View>
+            </BlurView>
+          </View>
         </Modal>
 
         {/* Create Folder Modal */}
@@ -1640,25 +1660,24 @@ export default function FilesScreen() {
           animationType="fade"
           onRequestClose={() => setShowSuccessModal(false)}
         >
-          <TouchableWithoutFeedback onPress={() => setShowSuccessModal(false)}>
-            <View style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}>
-              <TouchableWithoutFeedback>
-                <View style={[styles.successModalContent, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
-                  <View style={[styles.successIconContainer, { backgroundColor: theme.successLight }]}>
-                    <Feather name="check-circle" size={48} color="#10b981" />
-                  </View>
-                  <Text style={[styles.successTitle, { color: theme.text }]}>Success!</Text>
-                  <Text style={[styles.successMessage, { color: theme.textSecondary }]}>{successMessage}</Text>
-                  <TouchableOpacity
-                    style={[styles.successButton, { backgroundColor: '#10b981' }]}
-                    onPress={() => setShowSuccessModal(false)}
-                  >
-                    <Text style={[styles.successButtonText, { color: theme.textInverse }]}>OK</Text>
-                  </TouchableOpacity>
-                </View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <BlurView intensity={120} tint="dark" style={{ ...StyleSheet.absoluteFillObject, zIndex: 1 }}>
+              <View style={{ flex: 1, backgroundColor: 'rgba(10,10,20,0.55)' }} />
+            </BlurView>
+            <BlurView intensity={90} tint="dark" style={{ backgroundColor: 'rgba(20,40,80,0.32)', borderRadius: 28, padding: 32, alignItems: 'center', width: 320, borderWidth: 1.5, borderColor: theme.successLight, zIndex: 2, shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 16 }}>
+              <View style={{ width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 20, backgroundColor: theme.successLight }}>
+                <Feather name="check-circle" size={48} color="#10b981" />
+              </View>
+              <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 24, color: theme.text, marginBottom: 8, textAlign: 'center' }}>Success!</Text>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, color: theme.textSecondary, textAlign: 'center', marginBottom: 24, lineHeight: 22 }}>{successMessage}</Text>
+              <TouchableOpacity
+                style={{ paddingVertical: 14, paddingHorizontal: 32, borderRadius: 12, minWidth: 100, alignItems: 'center', backgroundColor: '#10b981' }}
+                onPress={() => setShowSuccessModal(false)}
+              >
+                <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 16, color: theme.textInverse }}>OK</Text>
+              </TouchableOpacity>
+            </BlurView>
+          </View>
         </Modal>
 
         {/* Properties Modal */}
@@ -1668,24 +1687,27 @@ export default function FilesScreen() {
           animationType="fade"
           onRequestClose={() => setShowPropertiesModal(false)}
         >
-          <TouchableOpacity style={[styles.menuOverlay, { backgroundColor: theme.overlay }]} onPress={() => setShowPropertiesModal(false)} activeOpacity={1}>
-            <View style={[styles.centeredMenuCard, { backgroundColor: theme.card, shadowColor: theme.shadow, minWidth: 280 }]}> 
-              <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 18, marginBottom: 12, textAlign: 'center' }}>File Properties</Text>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <BlurView intensity={120} tint="dark" style={{ ...StyleSheet.absoluteFillObject, zIndex: 1 }}>
+              <View style={{ flex: 1, backgroundColor: 'rgba(10,10,20,0.55)' }} />
+            </BlurView>
+            <BlurView intensity={90} tint="dark" style={{ backgroundColor: 'rgba(20,40,80,0.32)', borderRadius: 28, padding: 32, alignItems: 'center', width: 340, borderWidth: 1.5, borderColor: theme.primary, zIndex: 2, shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 16 }}>
+              <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 18, marginBottom: 12, textAlign: 'center', fontFamily: 'Inter_700Bold' }}>File Properties</Text>
               {propertiesItem && (
                 <>
-                  <Text style={{ color: theme.textSecondary, marginBottom: 4 }}><Text style={{ fontWeight: 'bold', color: theme.text }}>Name:</Text> {propertiesItem.name}</Text>
-                  <Text style={{ color: theme.textSecondary, marginBottom: 4 }}><Text style={{ fontWeight: 'bold', color: theme.text }}>Size:</Text> {propertiesItem.size ? `${(propertiesItem.size/1024).toFixed(2)} KB` : 'Unknown'}</Text>
-                  <Text style={{ color: theme.textSecondary, marginBottom: 4 }}><Text style={{ fontWeight: 'bold', color: theme.text }}>Type:</Text> {propertiesItem.name.split('.').pop().toUpperCase()}</Text>
-                  <Text style={{ color: theme.textSecondary, marginBottom: 4 }}><Text style={{ fontWeight: 'bold', color: theme.text }}>Created:</Text> {propertiesItem.createdAt ? new Date(propertiesItem.createdAt).toLocaleString() : 'Unknown'}</Text>
-                  <Text style={{ color: theme.textSecondary, marginBottom: 4 }}><Text style={{ fontWeight: 'bold', color: theme.text }}>Updated:</Text> {propertiesItem.updatedAt ? new Date(propertiesItem.updatedAt).toLocaleString() : 'Unknown'}</Text>
-                  {propertiesItem.url && <Text style={{ color: theme.textSecondary, marginBottom: 4 }} numberOfLines={1}><Text style={{ fontWeight: 'bold', color: theme.text }}>URL:</Text> {propertiesItem.url}</Text>}
+                  <Text style={{ color: theme.textSecondary, marginBottom: 4, fontFamily: 'Inter_400Regular' }}><Text style={{ fontWeight: 'bold', color: theme.text }}>Name:</Text> {propertiesItem.name}</Text>
+                  <Text style={{ color: theme.textSecondary, marginBottom: 4, fontFamily: 'Inter_400Regular' }}><Text style={{ fontWeight: 'bold', color: theme.text }}>Size:</Text> {propertiesItem.size ? `${(propertiesItem.size/1024).toFixed(2)} KB` : 'Unknown'}</Text>
+                  <Text style={{ color: theme.textSecondary, marginBottom: 4, fontFamily: 'Inter_400Regular' }}><Text style={{ fontWeight: 'bold', color: theme.text }}>Type:</Text> {propertiesItem.name.split('.').pop().toUpperCase()}</Text>
+                  <Text style={{ color: theme.textSecondary, marginBottom: 4, fontFamily: 'Inter_400Regular' }}><Text style={{ fontWeight: 'bold', color: theme.text }}>Created:</Text> {propertiesItem.createdAt ? new Date(propertiesItem.createdAt).toLocaleString() : 'Unknown'}</Text>
+                  <Text style={{ color: theme.textSecondary, marginBottom: 4, fontFamily: 'Inter_400Regular' }}><Text style={{ fontWeight: 'bold', color: theme.text }}>Updated:</Text> {propertiesItem.updatedAt ? new Date(propertiesItem.updatedAt).toLocaleString() : 'Unknown'}</Text>
+                  {propertiesItem.url && <Text style={{ color: theme.textSecondary, marginBottom: 4, fontFamily: 'Inter_400Regular' }} numberOfLines={1}><Text style={{ fontWeight: 'bold', color: theme.text }}>URL:</Text> {propertiesItem.url}</Text>}
                 </>
               )}
-              <TouchableOpacity style={{ marginTop: 18, alignSelf: 'center' }} onPress={() => setShowPropertiesModal(false)}>
-                <Text style={{ color: theme.primary, fontWeight: 'bold', fontSize: 16 }}>Close</Text>
+              <TouchableOpacity style={{ marginTop: 18, alignSelf: 'center', backgroundColor: theme.primary, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 32 }} onPress={() => setShowPropertiesModal(false)}>
+                <Text style={{ color: theme.textInverse, fontWeight: 'bold', fontSize: 16, fontFamily: 'Inter_700Bold' }}>Close</Text>
               </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
+            </BlurView>
+          </View>
         </Modal>
         </View>
       </View>
