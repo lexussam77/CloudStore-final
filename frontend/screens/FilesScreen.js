@@ -868,7 +868,7 @@ export default function FilesScreen() {
   const menuOptions = [
     { label: 'Upload Picture', icon: 'image' },
     { label: 'Take Photo', icon: 'camera' },
-    { label: 'Scan Document', icon: 'edit-3' },
+    { label: 'Scan Document', icon: 'file-plus' },
     { label: 'Upload Document', icon: 'file-text' },
     { label: 'Upload Audio', icon: 'music' },
     { label: 'Upload Video', icon: 'video' },
@@ -879,39 +879,55 @@ export default function FilesScreen() {
     const RADIUS = 110;
     const CENTER = 130;
     const angleStep = (2 * Math.PI) / menuOptions.length;
+    const BUTTON_SIZE = 64; // Reduced from 76
     return (
       <View style={[styles.overlay, { backgroundColor: 'rgba(0, 0, 0, 0.4)' }]} pointerEvents="box-none">
-        <View style={[styles.wheel, { backgroundColor: '#2a2a2a', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, elevation: 15 }]}>
+        <LinearGradient
+          colors={DEEP_BLUE_GRADIENT}
+          style={[
+            styles.wheel,
+            {
+              shadowColor: '#000',
+              shadowOpacity: 0.3,
+              shadowRadius: 20,
+              shadowOffset: { width: 0, height: 10 },
+              elevation: 15,
+            },
+          ]}
+        >
           {menuOptions.map((opt, i) => {
             const angle = i * angleStep - Math.PI / 2;
-            const x = CENTER + RADIUS * Math.cos(angle) - 32;
-            const y = CENTER + RADIUS * Math.sin(angle) - 32;
+            const x = CENTER + RADIUS * Math.cos(angle) - BUTTON_SIZE / 2;
+            const y = CENTER + RADIUS * Math.sin(angle) - BUTTON_SIZE / 2;
             return (
               <TouchableOpacity
                 key={opt.label}
                 style={[
-                  styles.iconButton, 
-                  { 
-                    left: x, 
-                    top: y, 
-                    backgroundColor: '#3a3a3a',
+                  styles.iconButton,
+                  {
+                    left: x,
+                    top: y,
+                    width: BUTTON_SIZE,
+                    height: BUTTON_SIZE,
+                    borderRadius: BUTTON_SIZE / 2,
+                    backgroundColor: 'rgba(255,255,255,0.10)',
                     shadowColor: '#000',
                     shadowOpacity: 0.2,
                     shadowRadius: 12,
                     shadowOffset: { width: 0, height: 6 },
                     elevation: 8,
                     borderWidth: 1,
-                    borderColor: '#4a4a4a'
-                  }
+                    borderColor: '#4a4a4a',
+                  },
                 ]}
                 onPress={() => onPress(opt.label)}
                 activeOpacity={0.7}
               >
-                <Feather name={opt.icon} size={28} color="#0061FF" />
+                <Feather name={opt.icon} size={28} color="#fff" />
               </TouchableOpacity>
             );
           })}
-        </View>
+        </LinearGradient>
       </View>
     );
   }
@@ -1354,17 +1370,17 @@ export default function FilesScreen() {
               <BlurView intensity={70} tint="dark" style={[styles.emptyGlassCard, { backgroundColor: 'rgba(20,40,80,0.32)', borderColor: 'rgba(255,255,255,0.10)' }]}> 
                 <View style={[styles.emptyGlassIconWrap, { backgroundColor: 'rgba(255,255,255,0.10)' }]}> 
                   <Feather name="folder-open" size={56} color={theme.primary} />
-                </View>
+              </View>
                 <Text style={[styles.emptyGlassTitle, { color: theme.text, fontFamily: 'Inter_700Bold' }]}>No files yet</Text>
                 <Text style={[styles.emptyGlassSubtitle, { color: theme.textSecondary, fontFamily: 'Inter_400Regular' }]}>Upload your first file to get started with CloudStore</Text>
-                <TouchableOpacity 
+              <TouchableOpacity 
                   style={[styles.emptyGlassButton, { backgroundColor: theme.primary, borderRadius: 18, marginTop: 8, flexDirection: 'row', alignItems: 'center' }]}
-                  onPress={() => setShowUploadModal(true)}
+                onPress={() => setShowUploadModal(true)}
                   activeOpacity={0.88}
-                >
+              >
                   <Feather name="upload" size={20} color={theme.textInverse} style={{ marginRight: 8 }} />
                   <Text style={[styles.emptyGlassButtonText, { color: theme.textInverse, fontFamily: 'Inter_700Bold', fontSize: 16 }]}>Upload Files</Text>
-                </TouchableOpacity>
+              </TouchableOpacity>
               </BlurView>
           )}
           {/* Folders Grid - Only show in 'all' and 'folders' tabs */}
@@ -1476,42 +1492,42 @@ export default function FilesScreen() {
                     <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 12, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('open', selectedItem, 'file')}>
                       <Feather name="eye" size={24} color={theme.primary} />
                       <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: theme.text, marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Open</Text>
-                    </TouchableOpacity>
+                  </TouchableOpacity>
                     <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 12, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('rename', selectedItem, 'file')}>
                       <Feather name="edit-3" size={24} color={theme.primary} />
                       <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: theme.text, marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Rename</Text>
-                    </TouchableOpacity>
+                  </TouchableOpacity>
                     <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 12, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('download', selectedItem, 'file')}>
                       <Feather name="download" size={24} color={theme.primary} />
                       <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: theme.text, marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Download</Text>
-                    </TouchableOpacity>
+                  </TouchableOpacity>
                     <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 12, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('share', selectedItem, 'file')}>
                       <Feather name="share-2" size={24} color={theme.primary} />
                       <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: theme.text, marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Share</Text>
-                    </TouchableOpacity>
+                  </TouchableOpacity>
                     <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 12, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('delete', selectedItem, 'file')}>
                       <Feather name="trash" size={24} color="#ff4b5c" />
                       <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: '#ff4b5c', marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Delete</Text>
-                    </TouchableOpacity>
+                  </TouchableOpacity>
                     <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 0, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('properties', selectedItem, 'file')}>
                       <Feather name="info" size={24} color={theme.primary} />
                       <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: theme.text, marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Properties</Text>
-                    </TouchableOpacity>
+                  </TouchableOpacity>
                 </>
               ) : (
                 <>
                     <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 12, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('open', selectedItem, 'folder')}>
                       <Feather name="folder-open" size={24} color={theme.primary} />
                       <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: theme.text, marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Open</Text>
-                    </TouchableOpacity>
+                  </TouchableOpacity>
                     <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 12, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('rename', selectedItem, 'folder')}>
                       <Feather name="edit-3" size={24} color={theme.primary} />
                       <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: theme.text, marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Rename</Text>
-                    </TouchableOpacity>
+                  </TouchableOpacity>
                     <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 16, marginBottom: 0, width: '100%', backgroundColor: 'rgba(255,255,255,0.04)' }} onPress={() => handleMenuAction('delete', selectedItem, 'folder')}>
                       <Feather name="trash" size={24} color="#ff4b5c" />
                       <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: '#ff4b5c', marginLeft: 16, textAlignVertical: 'center', textAlign: 'center' }}>Delete</Text>
-                    </TouchableOpacity>
+                  </TouchableOpacity>
                 </>
               )}
               </BlurView>
@@ -1531,18 +1547,11 @@ export default function FilesScreen() {
           animationType="fade"
           onRequestClose={() => setShowUploadModal(false)}
         >
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            {/* Fullscreen BlurView for background blur */}
-            <BlurView intensity={120} tint="dark" style={{ ...StyleSheet.absoluteFillObject, zIndex: 1 }}>
-              <View style={{ flex: 1, backgroundColor: 'rgba(10,10,20,0.55)' }} />
+          <TouchableWithoutFeedback onPress={() => setShowUploadModal(false)}>
+            <BlurView intensity={120} tint="dark" style={[styles.overlay, { backgroundColor: 'rgba(0, 0, 0, 0.4)' }]} pointerEvents="box-none">
+              <RadialMenu onPress={handleOptionPress} />
             </BlurView>
-            {/* RadialMenu glassy card, more rounded, centered, modern */}
-            <View style={{ zIndex: 2, alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
-              <View style={{ borderRadius: 38, overflow: 'hidden', backgroundColor: 'rgba(20,40,80,0.32)', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.10)', padding: 16, alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.10, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 12 }}>
-                <RadialMenu onPress={handleOptionPress} />
-              </View>
-            </View>
-          </View>
+          </TouchableWithoutFeedback>
         </Modal>
 
         {/* Rename Modal */}
@@ -1560,36 +1569,36 @@ export default function FilesScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
                 <Feather name="edit-3" size={24} color={theme.primary} />
                 <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 20, color: theme.text, marginLeft: 12 }}>Rename {(!renameItem?.url && !renameItem?.size && !renameItem?.type) ? 'Folder' : 'File'}</Text>
-              </View>
+                  </View>
               <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, color: theme.textSecondary, marginBottom: 20, lineHeight: 22, textAlign: 'center' }}>
-                Enter a new name for "{renameItem?.name}"
-              </Text>
-              <TextInput
+                    Enter a new name for "{renameItem?.name}"
+                  </Text>
+                  <TextInput
                 style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 12, padding: 16, fontSize: 16, color: theme.text, backgroundColor: theme.inputBackground, marginBottom: 24, width: '100%', fontFamily: 'Inter_400Regular' }}
-                value={newName}
-                onChangeText={setNewName}
-                placeholder="Enter new name"
+                    value={newName}
+                    onChangeText={setNewName}
+                    placeholder="Enter new name"
                 placeholderTextColor={theme.textSecondary}
-                autoFocus={true}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+                    autoFocus={true}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, width: '100%' }}>
-                <TouchableOpacity
+                    <TouchableOpacity
                   style={{ flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: theme.secondary, borderColor: theme.border, borderWidth: 1 }}
-                  onPress={() => setShowRenameModal(false)}
-                >
+                      onPress={() => setShowRenameModal(false)}
+                    >
                   <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textSecondary, fontFamily: 'Inter_700Bold' }}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
+                    </TouchableOpacity>
+                    <TouchableOpacity
                   style={{ flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: theme.primary }}
-                  onPress={handleRename}
-                >
+                      onPress={handleRename}
+                    >
                   <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textInverse, fontFamily: 'Inter_700Bold' }}>Rename</Text>
-                </TouchableOpacity>
-              </View>
+                    </TouchableOpacity>
+                  </View>
             </BlurView>
-          </View>
+                </View>
         </Modal>
 
         {/* Create Folder Modal */}
@@ -1666,18 +1675,18 @@ export default function FilesScreen() {
             </BlurView>
             <BlurView intensity={90} tint="dark" style={{ backgroundColor: 'rgba(20,40,80,0.32)', borderRadius: 28, padding: 32, alignItems: 'center', width: 320, borderWidth: 1.5, borderColor: theme.successLight, zIndex: 2, shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 16 }}>
               <View style={{ width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 20, backgroundColor: theme.successLight }}>
-                <Feather name="check-circle" size={48} color="#10b981" />
-              </View>
+                    <Feather name="check-circle" size={48} color="#10b981" />
+                  </View>
               <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 24, color: theme.text, marginBottom: 8, textAlign: 'center' }}>Success!</Text>
               <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, color: theme.textSecondary, textAlign: 'center', marginBottom: 24, lineHeight: 22 }}>{successMessage}</Text>
-              <TouchableOpacity
+                  <TouchableOpacity
                 style={{ paddingVertical: 14, paddingHorizontal: 32, borderRadius: 12, minWidth: 100, alignItems: 'center', backgroundColor: '#10b981' }}
-                onPress={() => setShowSuccessModal(false)}
-              >
+                    onPress={() => setShowSuccessModal(false)}
+                  >
                 <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 16, color: theme.textInverse }}>OK</Text>
-              </TouchableOpacity>
+                  </TouchableOpacity>
             </BlurView>
-          </View>
+                </View>
         </Modal>
 
         {/* Properties Modal */}
@@ -1707,7 +1716,7 @@ export default function FilesScreen() {
                 <Text style={{ color: theme.textInverse, fontWeight: 'bold', fontSize: 16, fontFamily: 'Inter_700Bold' }}>Close</Text>
               </TouchableOpacity>
             </BlurView>
-          </View>
+            </View>
         </Modal>
         </View>
       </View>
@@ -2038,7 +2047,7 @@ const styles = StyleSheet.create({
   },
   plusButton: {
     position: 'absolute',
-    bottom: 64,
+    bottom: 120,
     right: 24,
     backgroundColor: '#0061FF',
     borderRadius: 30,
