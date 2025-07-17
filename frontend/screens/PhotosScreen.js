@@ -1,9 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, Dimensions, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, Dimensions, SafeAreaView, ScrollView } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import { useFonts, Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
 
 const PHOTO_SIZE = (Dimensions.get('window').width - 64) / 3;
 const photos = [
@@ -18,9 +21,18 @@ const photos = [
   { id: '9', uri: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2' }, // polaroid collage
 ];
 
+const DEEP_BLUE_GRADIENT = ['#0a0f1c', '#12203a', '#1a2a4f'];
+const GLASS_BG_DEEP = 'rgba(20,40,80,0.32)';
+const GLASS_BORDER = 'rgba(255,255,255,0.10)';
+const WHITE = '#fff';
+const LIGHT_TEXT = '#e0e6f0';
+const BLUE_ACCENT = '#2979FF';
+
 export default function PhotosScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
+  let [fontsLoaded] = useFonts({ Inter_400Regular, Inter_700Bold });
+  if (!fontsLoaded) return null;
 
   const pickAndUploadFile = async () => {
     const result = await DocumentPicker.getDocumentAsync({});
@@ -40,41 +52,36 @@ export default function PhotosScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <FlatList
-        data={[]}
-        ListHeaderComponent={
-          <View style={[styles.card, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
-            <Text style={[styles.cardTitle, { color: theme.text }]}>Photos</Text>
-            <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>Today</Text>
-            <FlatList
-              data={photos}
-              keyExtractor={item => item.id}
-              numColumns={3}
-              scrollEnabled={false}
-              renderItem={({ item }) => (
-                <Image source={{ uri: item.uri }} style={styles.photo} />
-              )}
-              contentContainerStyle={styles.grid}
-            />
-          </View>
-        }
-        ListFooterComponent={
-          <>
-            <Text style={[styles.title, { color: theme.text }]}>Photos</Text>
-            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Come here to view and edit photos and videos, and manage camera uploads.</Text>
-            <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: theme.primary }]} activeOpacity={0.85} onPress={() => navigation.navigate('BackupLoading')}>
-              <Text style={[styles.primaryBtnText, { color: theme.textInverse }]}>Back up photos</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.secondaryBtn, { backgroundColor: theme.card, borderColor: theme.border }]} activeOpacity={0.85} onPress={pickAndUploadFile}>
-              <Text style={[styles.secondaryBtnText, { color: theme.text }]}>Upload photos</Text>
-              </TouchableOpacity>
-          </>
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { backgroundColor: theme.background }]}
-      />
-    </SafeAreaView>
+    <LinearGradient colors={DEEP_BLUE_GRADIENT} style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
+        <BlurView intensity={80} tint="dark" style={{ backgroundColor: GLASS_BG_DEEP, borderRadius: 22, borderWidth: 1, borderColor: GLASS_BORDER, marginTop: 18, marginBottom: 18, marginHorizontal: 12, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.10, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4, paddingTop: 16, paddingBottom: 12 }}>
+          <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 24, color: WHITE, alignSelf: 'flex-start', marginLeft: 16, marginBottom: 2 }}>Photos</Text>
+          <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, color: LIGHT_TEXT, alignSelf: 'flex-start', marginLeft: 16, marginBottom: 6 }}>Today</Text>
+          <FlatList
+            data={photos}
+            keyExtractor={item => item.id}
+            numColumns={3}
+            scrollEnabled={false}
+            renderItem={({ item }) => (
+              <Image source={{ uri: item.uri }} style={styles.photo} />
+            )}
+            contentContainerStyle={styles.grid}
+          />
+        </BlurView>
+        <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 28, color: WHITE, marginBottom: 4, alignSelf: 'flex-start', marginLeft: 16 }}>Photos</Text>
+        <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, color: LIGHT_TEXT, marginBottom: 10, alignSelf: 'flex-start', marginLeft: 16, marginRight: 16 }}>
+          Come here to view and edit photos and videos, and manage camera uploads.
+        </Text>
+        <TouchableOpacity style={{ borderRadius: 24, paddingVertical: 18, paddingHorizontal: 24, alignItems: 'center', width: '80%', marginBottom: 16, alignSelf: 'center', backgroundColor: BLUE_ACCENT, shadowOpacity: 0.10, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 }} activeOpacity={0.85} onPress={() => navigation.navigate('BackupLoading')}>
+          <Text style={{ color: WHITE, fontFamily: 'Inter_700Bold', fontSize: 18 }}>Back up photos</Text>
+        </TouchableOpacity>
+        <BlurView intensity={60} tint="dark" style={{ borderRadius: 24, overflow: 'hidden', width: '80%', alignSelf: 'center', marginBottom: 8, borderWidth: 1.5, borderColor: BLUE_ACCENT }}>
+          <TouchableOpacity style={{ borderRadius: 24, paddingVertical: 18, paddingHorizontal: 24, alignItems: 'center', width: '100%' }} activeOpacity={0.85} onPress={pickAndUploadFile}>
+            <Text style={{ color: BLUE_ACCENT, fontFamily: 'Inter_700Bold', fontSize: 18 }}>Upload photos</Text>
+          </TouchableOpacity>
+        </BlurView>
+      </ScrollView>
+    </LinearGradient>
   );
 }
 

@@ -1,11 +1,15 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useTheme } from '../theme/ThemeContext';
+import { BlurView } from 'expo-blur';
+
+const GLASS_BG_DEEP = 'rgba(20,40,80,0.32)';
+const GLASS_BORDER = 'rgba(255,255,255,0.10)';
 
 export default function FolderItem({ item, onMenuPress, onPress }) {
   const { theme } = useTheme();
-  
+
   const handleFolderPress = () => {
     if (onPress) {
       onPress(item);
@@ -13,31 +17,38 @@ export default function FolderItem({ item, onMenuPress, onPress }) {
   };
 
   return (
-    <TouchableOpacity style={[styles.folderCardGrid, { backgroundColor: theme.card, shadowColor: theme.shadow }]} onPress={handleFolderPress} activeOpacity={0.8}>
-      <View style={styles.folderIconContainer}>
-        <Feather name="folder" size={36} color={theme.primary} />
-      </View>
-      <Text style={[styles.folderNameGrid, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
-      <Text style={[styles.folderMeta, { color: theme.textSecondary }]} numberOfLines={1}>{item.modifiedAt ? new Date(item.modifiedAt).toLocaleString() : ''}</Text>
-      <TouchableOpacity style={styles.menuButton} onPress={onMenuPress} activeOpacity={0.7}>
-        <Feather name="more-vertical" size={22} color={theme.textSecondary} />
+    <BlurView intensity={70} tint="dark" style={styles.glassCard}>
+      <TouchableOpacity style={styles.touchable} onPress={handleFolderPress} activeOpacity={0.85}>
+        <View style={styles.folderIconContainer}>
+          <Feather name="folder" size={36} color="#2979FF" />
+        </View>
+        <Text style={styles.folderNameGrid} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.folderMeta} numberOfLines={1}>{item.modifiedAt ? new Date(item.modifiedAt).toLocaleString() : ''}</Text>
+        <TouchableOpacity style={styles.menuButton} onPress={onMenuPress} activeOpacity={0.7}>
+          <BlurView intensity={60} tint="dark" style={styles.menuBlur}>
+            <Feather name="more-vertical" size={22} color="#fff" />
+          </BlurView>
+        </TouchableOpacity>
       </TouchableOpacity>
-    </TouchableOpacity>
+    </BlurView>
   );
 }
 
 const styles = StyleSheet.create({
-  folderCardGrid: {
-    alignItems: 'center',
-    borderRadius: 12,
+  glassCard: {
+    borderRadius: 18,
     margin: 8,
-    padding: 12,
     width: 110,
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-    position: 'relative',
+    borderWidth: 1.5,
+    borderColor: GLASS_BORDER,
+    overflow: 'hidden',
+    backgroundColor: GLASS_BG_DEEP,
+  },
+  touchable: {
+    alignItems: 'center',
+    padding: 16,
+    width: '100%',
+    borderRadius: 18,
   },
   folderIconContainer: {
     width: 48,
@@ -48,20 +59,31 @@ const styles = StyleSheet.create({
   },
   folderNameGrid: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '600',
     marginBottom: 2,
     textAlign: 'center',
+    color: '#fff',
+    fontFamily: 'Inter',
   },
   folderMeta: {
     fontSize: 12,
     marginBottom: 2,
     textAlign: 'center',
+    color: 'rgba(255,255,255,0.7)',
+    fontFamily: 'Inter',
   },
   menuButton: {
     position: 'absolute',
     top: 8,
     right: 8,
-    padding: 6,
-    borderRadius: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  menuBlur: {
+    borderRadius: 16,
+    padding: 4,
+    backgroundColor: 'rgba(20,40,80,0.32)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 }); 

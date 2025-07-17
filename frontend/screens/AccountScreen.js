@@ -8,6 +8,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIsFocused } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
 import { getCurrentUser } from './api';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useFonts, Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
+import { BlurView } from 'expo-blur';
+import EyesBro from '../assets/images/pngs/Eyes-bro.png';
+import ExpertsBro from '../assets/images/pngs/Experts-bro.png';
+import NerdBro from '../assets/images/pngs/Nerd-bro.png';
 
 const user = {
   name: 'lazarus sam',
@@ -34,6 +40,13 @@ const sections = [
   { title: 'Recent logins', data: recentLogins.length ? recentLogins : [{}], key: 'logins' },
   { title: 'Keep work moving', data: [{}], key: 'keepwork' },
 ];
+
+const DEEP_BLUE_GRADIENT = ['#0a0f1c', '#12203a', '#1a2a4f'];
+const GLASS_BG_DEEP = 'rgba(20,40,80,0.32)';
+const GLASS_BORDER = 'rgba(255,255,255,0.10)';
+const WHITE = '#fff';
+const LIGHT_TEXT = '#e0e6f0';
+const BLUE_ACCENT = '#2979FF';
 
 export default function AccountScreen({ navigation }) {
   const { logout } = useContext(AuthContext);
@@ -102,6 +115,7 @@ export default function AccountScreen({ navigation }) {
         const token = await AsyncStorage.getItem('jwt');
         if (!token) {
           setError('No token found.');
+          
           setLoading(false);
           return;
         }
@@ -120,137 +134,132 @@ export default function AccountScreen({ navigation }) {
     fetchUserProfile();
   }, [isFocused]);
 
+  let [fontsLoaded] = useFonts({ Inter_400Regular, Inter_700Bold });
+  if (!fontsLoaded) return null;
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <LinearGradient colors={DEEP_BLUE_GRADIENT} style={styles.gradientContainer}>
+      <SafeAreaView style={styles.container}>
       {/* Top Bar */}
-      <View style={[styles.topBar, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
+        <View style={styles.topBar}>
         <TouchableOpacity style={styles.settingsIconWrap} onPress={() => navigation.navigate('Settings')} activeOpacity={0.7}>
-          <Feather name="settings" size={26} color={theme.textSecondary} />
+            <Feather name="settings" size={26} color={WHITE} />
         </TouchableOpacity>
       </View>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Profile Card */}
-        <Animated.View style={[styles.profileCard, { backgroundColor: theme.card, shadowColor: theme.shadow, shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 4 }, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}>
+        <Animated.View style={[styles.glassCard, styles.profileCard, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}> 
+            <View style={styles.profileImageWrap}>
               <TouchableOpacity onPress={pickImage} activeOpacity={0.8} style={styles.avatarCircleImgWrap}>
                 {avatarUri ? (
                   <Image source={{ uri: avatarUri }} style={styles.avatarCircleImg} />
                 ) : (
-                  <View style={[styles.avatarCircleImg, { backgroundColor: theme.primaryLight, alignItems: 'center', justifyContent: 'center' }]}>
-                    <Feather name="user" size={40} color={theme.primary} />
+                  <View style={[styles.avatarCircleImg, { backgroundColor: '#1a237e', alignItems: 'center', justifyContent: 'center' }]}> 
+                    <Feather name="user" size={40} color={BLUE_ACCENT} />
                   </View>
                 )}
-                <View style={[styles.editAvatarOverlay, { backgroundColor: theme.primary, borderColor: theme.card }]}>
-                  <Feather name="edit-3" size={16} color={theme.textInverse} />
+                <View style={styles.editAvatarOverlay}>
+                  <Feather name="edit-3" size={16} color={WHITE} />
                 </View>
                 </TouchableOpacity>
+            </View>
+            <View style={styles.profileTextWrap}>
                 {loading ? (
-                  <ActivityIndicator size="small" color={theme.primary} />
+                <ActivityIndicator size="small" color={BLUE_ACCENT} />
                 ) : error ? (
-                  <Text style={{ color: 'red' }}>{error}</Text>
+                <Text style={{ color: 'red', fontFamily: 'Inter_400Regular' }}>{error}</Text>
                 ) : (
                   <>
-                    <Text style={[styles.name, { color: theme.text }]}>{userProfile.name}</Text>
-                    <Text style={[styles.email, { color: theme.textSecondary }]}>{userProfile.email}</Text>
+                  <Text style={[styles.name, { fontFamily: 'Inter_700Bold' }]}>{userProfile.name}</Text>
+                  <Text style={[styles.email, { fontFamily: 'Inter_400Regular' }]}>{userProfile.email}</Text>
                   </>
                 )}
+            </View>
         </Animated.View>
         
         {/* Plan and Storage Card */}
-        <Animated.View style={[styles.planStoragePadFull, styles.splitPillContainerDropbox, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}> 
-          <View style={styles.splitPillRowDropbox}>
-            {/* Left: Label */}
-            <View style={styles.splitPillLeftDropbox}>
-              <Feather name="award" size={18} color="#fff" style={{ marginRight: 7 }} />
-              <Text style={styles.splitPillLabelTextDropbox}>Dropbox Basic</Text>
-            </View>
-            {/* Right: Upgrade */}
-            <TouchableOpacity
-              style={[
-                styles.splitPillRightDropbox,
-                { backgroundColor: theme.primary }
-              ]}
-              activeOpacity={0.85}
-              onPress={() => navigation.navigate('ManagePlan')}
-            >
-              <Text style={styles.splitPillUpgradeTextDropbox}>Upgrade</Text>
-              <Feather name="arrow-right" size={18} color="#111" style={{ marginLeft: 7 }} />
-            </TouchableOpacity>
+        <Animated.View style={[styles.glassCard, styles.planStorageCard, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}> 
+          <View style={{ alignItems: 'center', marginBottom: 10 }}>
+            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 19, color: WHITE, textAlign: 'center' }}>Need more storage?</Text>
           </View>
+          <View style={{ alignItems: 'center' }}>
+              <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', borderRadius: 999, backgroundColor: BLUE_ACCENT, paddingVertical: 14, paddingHorizontal: 32, shadowOpacity: 0.10, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 }} activeOpacity={0.85} onPress={() => navigation.navigate('ManagePlan')}>
+                <Text style={{ color: WHITE, fontFamily: 'Inter_700Bold', fontSize: 16 }}>Upgrade</Text>
+                <Feather name="arrow-right" size={16} color={WHITE} style={{ marginLeft: 6 }} />
+              </TouchableOpacity>
+            </View>
         </Animated.View>
 
-        {/* Feature Banner 2: After Plan/Storage Card */}
-        <View style={styles.featureBannerDropbox}>
-          <View style={styles.featureBannerImageWrapDropbox}>
-            <Image source={require('../assets/images/pngs/Eyes-bro.png')} style={styles.featureBannerImageDropbox} resizeMode="cover" />
-            <View style={styles.featureBannerTextOverlayDropbox}>
-              <Text style={styles.featureBannerTitleDropbox}>Privacy protection</Text>
-            </View>
-          </View>
+        {/* Privacy Protection Image as background between pads */}
+        <View style={{ width: '100%', height: 120, marginTop: -36, marginBottom: -36, position: 'relative', zIndex: 1, alignItems: 'center', justifyContent: 'center' }} pointerEvents="none">
+          <Image source={EyesBro} style={{ position: 'absolute', width: '100%', height: '100%', top: 0, left: 0, opacity: 0.92 }} resizeMode="cover" />
         </View>
 
         {/* Security Section */}
-        <Animated.View style={[styles.sectionCard, { backgroundColor: theme.card, shadowColor: theme.shadow }, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}> 
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Security</Text>
+        <Animated.View style={[styles.glassCard, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}> 
+          <Text style={[styles.sectionTitle, { fontFamily: 'Inter_700Bold', fontSize: 22 }]}>Security</Text>
+          <View style={styles.specsRow}>
           {securityOptions.map((item, idx) => (
+                <BlurView intensity={120} tint="dark" style={styles.specCard} key={idx}>
             <TouchableOpacity
-              key={idx}
-              style={styles.sectionRow}
+                    style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}
               activeOpacity={0.85}
               onPress={() => {
                 if (item.label === 'Change password') navigation.navigate('ChangePassword');
                 if (item.label === 'Two-factor authentication') navigation.navigate('TwoFactor');
               }}
             >
-              <Feather name={item.icon} size={20} color={theme.primary} style={styles.sectionIcon} />
-              <Text style={[styles.sectionLabel, { color: theme.text }]}>{item.label}</Text>
+                    <Feather name={item.icon} size={28} color={BLUE_ACCENT} style={styles.specIcon} />
+                    <Text style={[styles.specLabel, { fontFamily: 'Inter_400Regular', fontSize: 16 }]}>{item.label}</Text>
             </TouchableOpacity>
-          ))}
-        </Animated.View>
-
-        {/* Feature Banner 3: After Security Section */}
-        <View style={styles.featureBannerDropbox}>
-          <View style={styles.featureBannerImageWrapDropbox}>
-            <Image source={require('../assets/images/pngs/Nerd-bro.png')} style={styles.featureBannerImageDropbox} resizeMode="cover" />
-            <View style={styles.featureBannerTextOverlayDropbox}>
-              <Text style={styles.featureBannerTitleDropbox}>24/7 support</Text>
+                </BlurView>
+              ))}
             </View>
+          </Animated.View>
+
+        {/* 24/7 Support Section (image and main text only) */}
+        <View style={{ alignItems: 'center', marginBottom: 32, width: '100%' }}>
+          <View style={{ width: '100%', aspectRatio: 1.8, marginBottom: 10 }}>
+            <Image source={NerdBro} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
           </View>
+          <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 22, color: WHITE, textAlign: 'center' }}>24/7 Support</Text>
         </View>
 
         {/* Connected Apps Section */}
-        <Animated.View style={[styles.sectionCard, { backgroundColor: theme.card, shadowColor: theme.shadow }, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}> 
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Connected apps</Text>
-          {connectedApps.map((item, idx) => {
-            let iconColor = theme.textSecondary;
-            if (item.label.toLowerCase().includes('github')) iconColor = '#181717';
-            if (item.label.toLowerCase().includes('slack')) iconColor = '#611f69';
-            return (
-              <View key={idx} style={styles.sectionRow}>
-                <Feather name={item.icon} size={20} color={iconColor} style={styles.sectionIcon} />
-                <Text style={[styles.sectionLabel, { color: theme.text }]}>{item.label}</Text>
+        <Animated.View style={[styles.glassCard, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}> 
+          <Text style={[styles.sectionTitle, { fontFamily: 'Inter_700Bold', fontSize: 22 }]}>Connected apps</Text>
+          <View style={styles.specsRow}>
+              {connectedApps.map((item, idx) => (
+                <BlurView intensity={120} tint="dark" style={styles.specCard} key={idx}>
+                  <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                    <Feather name={item.icon} size={28} color={BLUE_ACCENT} style={styles.specIcon} />
+                    <Text style={[styles.specLabel, { fontFamily: 'Inter_400Regular', fontSize: 16 }]}>{item.label}</Text>
+                  </View>
+                </BlurView>
+              ))}
               </View>
-            );
-          })}
         </Animated.View>
+
         {/* Recent Logins Section */}
-        <Animated.View style={[styles.sectionCard, { backgroundColor: theme.card, shadowColor: theme.shadow }, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}> 
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent logins</Text>
+        <Animated.View style={[styles.glassCard, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}> 
+          <Text style={[styles.sectionTitle, { fontFamily: 'Inter_700Bold', fontSize: 22 }]}>Recent logins</Text>
+          <View style={styles.specsRow}>
           {recentLogins.map((item, idx) => (
-            <View key={idx} style={styles.sectionRow}>
-              <Feather name={item.icon} size={20} color={theme.textSecondary} style={styles.sectionIcon} />
-              <Text style={[styles.sectionLabel, { color: theme.text }]}>{item.label}</Text>
+                <BlurView intensity={120} tint="dark" style={styles.specCard} key={idx}>
+                  <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                    <Feather name={item.icon} size={28} color={BLUE_ACCENT} style={styles.specIcon} />
+                    <Text style={[styles.specLabel, { fontFamily: 'Inter_400Regular', fontSize: 16 }]}>{item.label}</Text>
+                  </View>
+                </BlurView>
+              ))}
             </View>
-          ))}
         </Animated.View>
+
         {/* Logout Button */}
-      <TouchableOpacity
-        style={[styles.logoutBtn, { backgroundColor: theme.card, shadowColor: theme.shadow }]}
-        onPress={() => setShowLogoutModal(true)}
-        activeOpacity={0.85}
-      >
-          <LogoutSVG width={32} height={32} style={{ marginRight: 8 }} />
-        <Text style={[styles.logoutText, { color: theme.primary }]}>Log Out</Text>
-      </TouchableOpacity>
+          <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 28, marginHorizontal: 16, marginTop: 36, paddingVertical: 20, backgroundColor: BLUE_ACCENT, shadowOpacity: 0.18, shadowRadius: 12, elevation: 10 }} onPress={() => setShowLogoutModal(true)} activeOpacity={0.85}>
+            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 19, textAlign: 'center', color: WHITE }}>Log Out</Text>
+            <Feather name="log-out" size={20} color={WHITE} style={{ marginLeft: 8 }} />
+          </TouchableOpacity>
       </ScrollView>
 
       {/* Logout Confirmation Modal */}
@@ -260,25 +269,26 @@ export default function AccountScreen({ navigation }) {
         animationType="fade"
         onRequestClose={() => setShowLogoutModal(false)}
       >
-        <View style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}>
-          <View style={[styles.modalCard, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
-            <View style={[styles.modalIconContainer, { backgroundColor: theme.primaryLight }]}>
-              <Feather name="log-out" size={32} color={theme.primary} />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <BlurView intensity={120} tint="dark" style={{ ...StyleSheet.absoluteFillObject, zIndex: 1 }}>
+            <View style={{ flex: 1, backgroundColor: 'rgba(10,10,20,0.55)' }} />
+          </BlurView>
+          <BlurView intensity={90} tint="dark" style={{ backgroundColor: GLASS_BG_DEEP, borderRadius: 24, padding: 32, alignItems: 'center', width: 320, borderWidth: 1.5, borderColor: GLASS_BORDER, zIndex: 2, shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 16 }}>
+            <View style={{ width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 20, backgroundColor: BLUE_ACCENT }}>
+                <Feather name="log-out" size={32} color={WHITE} />
             </View>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>Log Out</Text>
-            <Text style={[styles.modalMessage, { color: theme.textSecondary }]}>
-              Are you sure you want to log out of your CloudStore account?
-            </Text>
-            <View style={styles.modalButtons}>
+            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 23, color: WHITE, marginBottom: 12, textAlign: 'center' }}>Log Out</Text>
+            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 17, color: LIGHT_TEXT, marginBottom: 28, textAlign: 'center', lineHeight: 24 }}>Are you sure you want to log out of your CloudStore account?</Text>
+            <View style={{ flexDirection: 'row', gap: 16, width: '100%' }}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonCancel, { backgroundColor: theme.secondary, borderColor: theme.border }]}
+                style={{ flex: 1, borderRadius: 18, paddingVertical: 16, paddingHorizontal: 22, alignItems: 'center', backgroundColor: '#23272f' }}
                 onPress={() => setShowLogoutModal(false)}
                 activeOpacity={0.85}
               >
-                <Text style={[styles.modalButtonText, { color: theme.text }]}>Cancel</Text>
+                <Text style={{ color: WHITE, fontFamily: 'Inter_700Bold', fontSize: 17, textAlign: 'center' }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: theme.primary }]}
+                style={{ flex: 1, borderRadius: 18, paddingVertical: 16, paddingHorizontal: 22, alignItems: 'center', backgroundColor: BLUE_ACCENT }}
                 onPress={async () => {
                   setShowLogoutModal(false);
                   await logout();
@@ -286,304 +296,304 @@ export default function AccountScreen({ navigation }) {
                 }}
                 activeOpacity={0.85}
               >
-                <Text style={[styles.modalButtonText, { color: theme.textInverse }]}>Log Out</Text>
+                <Text style={{ color: WHITE, fontFamily: 'Inter_700Bold', fontSize: 17, textAlign: 'center' }}>Log Out</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </BlurView>
         </View>
       </Modal>
     </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     paddingBottom: 80,
+    paddingTop: 8,
   },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
     height: 56,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0,
     paddingHorizontal: 16,
     marginBottom: 2,
   },
   settingsIconWrap: {
     padding: 4,
     borderRadius: 20,
+    backgroundColor: 'rgba(41,121,255,0.12)',
+  },
+  glassCard: {
+    backgroundColor: GLASS_BG_DEEP,
+    borderRadius: 36,
+    borderWidth: 1,
+    borderColor: GLASS_BORDER,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 12,
+    marginHorizontal: 16,
+    marginBottom: 24,
+    padding: 32,
   },
   profileCard: {
+    flexDirection: 'row',
+    gap: 18,
     alignItems: 'center',
-    borderRadius: 20,
-    marginHorizontal: 16,
-    marginBottom: 20,
-    padding: 20,
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
+    marginBottom: 32,
+    paddingVertical: 36,
+  },
+  profileImageWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarCircleImgWrap: {
     position: 'relative',
-    marginBottom: 8,
+    marginBottom: 0,
   },
   avatarCircleImg: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: BLUE_ACCENT,
+    backgroundColor: '#1a237e',
   },
   editAvatarOverlay: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    borderRadius: 12,
-    padding: 4,
+    borderRadius: 18,
+    padding: 8,
     borderWidth: 2,
+    backgroundColor: BLUE_ACCENT,
+    borderColor: GLASS_BG_DEEP,
+  },
+  profileTextWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    gap: 4,
   },
   name: {
-    fontSize: 18,
+    fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 2,
-    textAlign: 'center',
+    textAlign: 'left',
+    color: WHITE,
   },
   email: {
-    fontSize: 14,
-    marginBottom: 6,
-    textAlign: 'center',
+    fontSize: 17,
+    marginBottom: 8,
+    textAlign: 'left',
+    color: LIGHT_TEXT,
   },
-  singleCard: {
-    borderRadius: 20,
-    marginHorizontal: 16,
-    marginBottom: 20,
-    padding: 24,
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
-    alignItems: 'center',
+  planStorageCard: {
+    marginBottom: 28,
+    paddingBottom: 18,
   },
-  planBadgeRowDropbox: {
+  planRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    marginTop: 10,
+    justifyContent: 'space-between',
     marginBottom: 8,
-    gap: 8,
   },
-  planBadgeCenterDropbox: {
+  planLabel: {
+    fontSize: 19,
     fontWeight: 'bold',
-    borderRadius: 32,
-    paddingHorizontal: 0,
-    paddingVertical: 22,
-    textAlign: 'center',
-    minHeight: 64,
+    color: WHITE,
   },
-  sectionCard: {
-    borderRadius: 20,
-    marginHorizontal: 16,
-    marginBottom: 20,
-    padding: 20,
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
+  upgradeBtn: {
+    backgroundColor: WHITE,
+    borderRadius: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: BLUE_ACCENT,
+    shadowOpacity: 0.10,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  upgradeBtnText: {
+    color: BLUE_ACCENT,
+    fontWeight: 'bold',
+    fontSize: 17,
+  },
+  storageText: {
+    color: LIGHT_TEXT,
+    fontSize: 16,
+    marginTop: 6,
+    fontWeight: '500',
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 18,
+    color: WHITE,
   },
-  sectionRow: {
+  specsRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  specCard: {
+    flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
+    justifyContent: 'center',
+    borderRadius: 32,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.18)',
+    paddingVertical: 28,
+    paddingHorizontal: 16,
+    marginHorizontal: 4,
+    overflow: 'hidden', // Ensures blur stays within rounded corners
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
   },
-  sectionIcon: {
-    marginRight: 12,
+  specIcon: {
+    marginBottom: 10,
   },
-  sectionLabel: {
-    fontSize: 15,
+  specLabel: {
+    fontSize: 16,
+    color: WHITE,
     fontWeight: '500',
+    textAlign: 'center',
   },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
+    borderRadius: 28,
     marginHorizontal: 16,
-    marginTop: 20,
-    paddingVertical: 16,
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
+    marginTop: 36,
+    paddingVertical: 20,
+    backgroundColor: WHITE,
+    shadowColor: BLUE_ACCENT,
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 10,
   },
   logoutText: {
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 19,
     textAlign: 'center',
+    color: BLUE_ACCENT,
   },
   // Modal Styles
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(10,10,20,0.7)',
   },
   modalCard: {
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: 28,
+    padding: 32,
     width: '85%',
-    maxWidth: 320,
+    maxWidth: 360,
     alignItems: 'center',
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 10,
+    backgroundColor: GLASS_BG_DEEP,
+    borderWidth: 1,
+    borderColor: GLASS_BORDER,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 12,
   },
   modalIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
+    backgroundColor: BLUE_ACCENT,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 23,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 12,
     textAlign: 'center',
+    color: WHITE,
   },
   modalMessage: {
-    fontSize: 16,
+    fontSize: 17,
     textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 22,
+    marginBottom: 28,
+    lineHeight: 24,
+    color: LIGHT_TEXT,
   },
   modalButtons: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 16,
     width: '100%',
   },
   modalButton: {
     flex: 1,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 22,
     alignItems: 'center',
-    borderWidth: 1,
-  },
-  modalButtonCancel: {
-    borderWidth: 1,
-  },
-  modalButtonConfirm: {
     borderWidth: 0,
   },
-  modalButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  featureBannerDropbox: {
-    width: '100%',
-    marginBottom: 24,
-    paddingHorizontal: 0,
-    backgroundColor: 'transparent',
-  },
-  featureBannerImageWrapDropbox: {
-    width: '100%',
-    aspectRatio: 1.7,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  featureBannerImageDropbox: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 0,
-  },
-  featureBannerTextOverlayDropbox: {
-    position: 'absolute',
-    left: 0,
-    bottom: 0,
-    width: '100%',
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    backgroundColor: 'transparent',
-    alignItems: 'flex-start',
-  },
-  featureBannerTitleDropbox: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'left',
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.35)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 6,
-  },
-  planStoragePadFull: {
-    backgroundColor: 'transparent',
-    marginHorizontal: 0,
-    marginBottom: 24,
-    padding: 0,
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 0,
-  },
-  splitPillContainerDropbox: {
-    backgroundColor: 'transparent',
-    marginHorizontal: 0,
-    marginBottom: 24,
-    padding: 0,
-    shadowColor: '#23272f',
-    shadowOpacity: 0.10,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-    borderRadius: 40,
-  },
-  splitPillRowDropbox: {
-    flexDirection: 'row',
-    width: '100%',
-    alignItems: 'stretch',
-    overflow: 'hidden',
-    borderRadius: 40,
-  },
-  splitPillLeftDropbox: {
-    flex: 1.1,
+  modalButtonCancel: {
     backgroundColor: '#23272f',
-    flexDirection: 'row',
+  },
+  modalButtonConfirm: {
+    backgroundColor: BLUE_ACCENT,
+  },
+  modalButtonText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: WHITE,
+  },
+  // New styles for outerGlassCard and innerGlassPad
+  outerGlassCard: {
+    borderRadius: 36,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.18)',
+    padding: 32,
+    marginHorizontal: 16,
+    marginBottom: 24,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 12,
+    backgroundColor: 'transparent',
+  },
+  innerGradientPad: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 18,
-    borderTopLeftRadius: 40,
-    borderBottomLeftRadius: 40,
-  },
-  splitPillLabelTextDropbox: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: 'bold',
-  },
-  splitPillRightDropbox: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingHorizontal: 18,
-    paddingVertical: 18,
-    borderTopRightRadius: 40,
-    borderBottomRightRadius: 40,
-  },
-  splitPillUpgradeTextDropbox: {
-    color: '#111',
-    fontWeight: 'bold',
-    fontSize: 16,
-    letterSpacing: 0.2,
-    textAlign: 'left',
+    borderRadius: 999, // Perfect pill/oval for the light glow
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.18)',
+    paddingVertical: 28,
+    paddingHorizontal: 16,
+    marginHorizontal: 4,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
   },
 }); 

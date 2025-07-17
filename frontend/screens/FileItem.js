@@ -2,6 +2,8 @@ import React, { useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Animated } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useTheme } from '../theme/ThemeContext';
+import { BlurView } from 'expo-blur';
+import { Inter_400Regular, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
 
 function getFileIcon(name) {
   if (!name) return 'file-text';
@@ -55,26 +57,42 @@ export default function FileItem({ item, onMenuPress, onPress, onStarPress }) {
   // Choose vibrant color for compressed files
   const compressedBg = isCompressed ? '#e0f2fe' : theme.secondaryLight;
   const compressedIcon = isCompressed ? '#0ea5e9' : theme.primary;
+
+  let [fontsLoaded] = useFonts({ Inter_400Regular, Inter_700Bold });
+  if (!fontsLoaded) return null;
+
   return (
-    <Animated.View style={[styles.fileCardRow, { backgroundColor: theme.card, shadowColor: theme.shadow }, { opacity: fadeAnim }]}> 
-      <TouchableOpacity style={[styles.fileCardRow, { backgroundColor: theme.card }]} onPress={onPress} activeOpacity={0.8}>
-        <View style={[styles.fileThumbWrap, { backgroundColor: compressedBg }]}> 
-          {/* Show image or video thumbnail for compressed files, just like normal uploads */}
+    <Animated.View style={{ opacity: fadeAnim, width: '100%' }}>
+      <BlurView intensity={90} tint="dark" style={{
+        backgroundColor: 'rgba(20,40,80,0.32)',
+        borderRadius: 22,
+        borderWidth: 1.5,
+        borderColor: 'rgba(255,255,255,0.10)',
+        padding: 16,
+        marginHorizontal: 8,
+        marginVertical: 6,
+        flexDirection: 'row',
+        alignItems: 'center',
+        // Removed shadowColor, shadowOpacity, shadowRadius, shadowOffset, elevation for no glow
+      }}>
+        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }} onPress={onPress} activeOpacity={0.8}>
+          <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: compressedBg, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginRight: 12 }}>
           {isImage && item.url ? (
-            <Image source={{ uri: item.url }} style={styles.fileThumbImg} />
+              <Image source={{ uri: item.url }} style={{ width: 44, height: 44, borderRadius: 12, resizeMode: 'cover' }} />
           ) : isVideo && item.url ? (
-            <Feather name="film" size={32} color={compressedIcon} />
+              <Feather name="film" size={28} color={compressedIcon} />
           ) : (
-            <Feather name={getFileIcon(item.name)} size={32} color={compressedIcon} />
+              <Feather name={getFileIcon(item.name)} size={28} color={compressedIcon} />
           )}
         </View>
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={[styles.fileCardName, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
-          <Text style={[styles.fileCardMeta, { color: theme.textSecondary }]} numberOfLines={1}>{item.modifiedAt ? new Date(item.modifiedAt).toLocaleString() : ''} {item.size ? `• ${item.size}` : ''}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 16, color: theme.text, marginBottom: 2 }} numberOfLines={1}>{item.name}</Text>
+            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: theme.textSecondary }} numberOfLines={1}>{item.modifiedAt ? new Date(item.modifiedAt).toLocaleString() : ''} {item.size ? `• ${item.size}` : ''}</Text>
         </View>
+        </TouchableOpacity>
         <Animated.View style={{ transform: [{ scale: starScaleAnim }] }}>
           <TouchableOpacity 
-            style={styles.starButton} 
+            style={{ padding: 6, borderRadius: 20, marginRight: 2, backgroundColor: 'rgba(255,255,255,0.08)' }} 
             onPress={handleStarPress} 
             activeOpacity={0.7}
           >
@@ -85,10 +103,10 @@ export default function FileItem({ item, onMenuPress, onPress, onStarPress }) {
             />
           </TouchableOpacity>
         </Animated.View>
-        <TouchableOpacity style={styles.menuButton} onPress={onMenuPress} activeOpacity={0.7}>
+        <TouchableOpacity style={{ padding: 6, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.08)', marginLeft: 2 }} onPress={onMenuPress} activeOpacity={0.7}>
           <Feather name="more-vertical" size={22} color={theme.textSecondary} />
         </TouchableOpacity>
-      </TouchableOpacity>
+      </BlurView>
     </Animated.View>
   );
 }

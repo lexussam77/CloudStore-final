@@ -4,12 +4,15 @@ import { AntDesign } from '@expo/vector-icons';
 import { useEffect, useRef } from 'react';
 import { useTheme } from '../theme/ThemeContext';
 import { useNotification } from './AuthContext';
+import { BlurView } from 'expo-blur';
+import { useFonts, Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
 
 export default function CustomPrompt({ visible, message, onClose, success = true }) {
   const { theme } = useTheme();
   const { addNotification } = useNotification();
   // Animation for icon pop
   const scaleAnim = useRef(new Animated.Value(0)).current;
+  let [fontsLoaded] = useFonts({ Inter_400Regular, Inter_700Bold });
   useEffect(() => {
     if (visible) {
       scaleAnim.setValue(0);
@@ -23,20 +26,27 @@ export default function CustomPrompt({ visible, message, onClose, success = true
     }
   }, [visible]);
 
-  if (!visible) return null;
+  if (!visible || !fontsLoaded) return null;
 
+  const GLASS_BG_DEEP = 'rgba(20,40,80,0.32)';
+  const GLASS_BORDER = 'rgba(255,255,255,0.10)';
+  const WHITE = '#fff';
+  const BLUE_ACCENT = '#2979FF';
   return (
-    <View style={[styles.overlay, { backgroundColor: theme.overlay }]}>
-      <Animated.View style={[styles.iconWrap, { backgroundColor: theme.card, shadowColor: theme.shadow, transform: [{ scale: scaleAnim }] }] }>
-        <AntDesign
-          name={success ? 'checkcircle' : 'closecircle'}
-          size={72}
-          color={success ? theme.primary : 'crimson'}
-        />
+    <View style={[styles.overlay, { backgroundColor: 'rgba(10,20,40,0.55)' }]}> 
+      <BlurView intensity={120} tint="dark" style={{ ...StyleSheet.absoluteFillObject, zIndex: 1 }} />
+      <Animated.View style={{ alignItems: 'center', justifyContent: 'center', marginBottom: 18, transform: [{ scale: scaleAnim }], zIndex: 2 }}>
+        <BlurView intensity={90} tint="dark" style={{ backgroundColor: GLASS_BG_DEEP, borderRadius: 48, padding: 18, borderWidth: 1.5, borderColor: GLASS_BORDER, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 8 }}>
+          <AntDesign
+            name={success ? 'checkcircle' : 'closecircle'}
+            size={84}
+            color={success ? BLUE_ACCENT : 'crimson'}
+          />
+        </BlurView>
       </Animated.View>
-      <Text style={[styles.promptText, { color: theme.primary }]}>{message}</Text>
-      <TouchableOpacity onPress={onClose} activeOpacity={0.85} style={[styles.promptBtn, { backgroundColor: theme.primary }]}>
-        <Text style={[styles.promptBtnText, { color: theme.textInverse }]}>OK</Text>
+      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 18, color: WHITE, textAlign: 'center', marginBottom: 14, marginHorizontal: 24, zIndex: 2 }}>{message}</Text>
+      <TouchableOpacity onPress={onClose} activeOpacity={0.85} style={{ backgroundColor: BLUE_ACCENT, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 38, alignItems: 'center', marginTop: 4, shadowOpacity: 0.10, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2, zIndex: 2 }}>
+        <Text style={{ color: WHITE, fontFamily: 'Inter_700Bold', fontSize: 16 }}>OK</Text>
       </TouchableOpacity>
     </View>
   );

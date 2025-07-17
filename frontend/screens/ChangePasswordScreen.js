@@ -1,9 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, Animated } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, Animated, Modal } from 'react-native';
 import SimplePrompt from './SimplePrompt';
 import { useTheme } from '../theme/ThemeContext';
 import { changePassword } from './api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import Feather from 'react-native-vector-icons/Feather';
+import { useFonts, Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
 
 export default function ChangePasswordScreen({ navigation }) {
   const { theme } = useTheme();
@@ -57,65 +61,74 @@ export default function ChangePasswordScreen({ navigation }) {
     }
   };
 
+  const DEEP_BLUE_GRADIENT = ['#0a0f1c', '#12203a', '#1a2a4f'];
+  const GLASS_BG_DEEP = 'rgba(20,40,80,0.32)';
+  const GLASS_BORDER = 'rgba(255,255,255,0.10)';
+  const WHITE = '#fff';
+  const BLUE_ACCENT = '#2979FF';
+
+  let [fontsLoaded] = useFonts({ Inter_400Regular, Inter_700Bold });
+  if (!fontsLoaded) return null;
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <Animated.View style={[styles.card, { backgroundColor: theme.card, shadowColor: theme.shadow, opacity: fadeAnim }]}>
-        <Text style={[styles.header, { color: theme.primary }]}>Change Password</Text>
-        <TextInput
-          style={[
-            styles.inputAligned, 
-            { backgroundColor: theme.input, color: theme.text, borderColor: theme.border },
-            focusedInput === 'current' && [styles.inputFocused, { borderColor: theme.primary, backgroundColor: theme.primaryLight }]
-          ]}
-          placeholder="Current password"
-          placeholderTextColor={theme.textSecondary}
-          secureTextEntry
-          value={current}
-          onChangeText={setCurrent}
-          onFocus={() => setFocusedInput('current')}
-          onBlur={() => setFocusedInput('')}
-        />
-        <TextInput
-          style={[
-            styles.inputAligned, 
-            { backgroundColor: theme.input, color: theme.text, borderColor: theme.border },
-            focusedInput === 'next' && [styles.inputFocused, { borderColor: theme.primary, backgroundColor: theme.primaryLight }]
-          ]}
-          placeholder="New password"
-          placeholderTextColor={theme.textSecondary}
-          secureTextEntry
-          value={next}
-          onChangeText={setNext}
-          onFocus={() => setFocusedInput('next')}
-          onBlur={() => setFocusedInput('')}
-        />
-        <TextInput
-          style={[
-            styles.inputAligned, 
-            { backgroundColor: theme.input, color: theme.text, borderColor: theme.border },
-            focusedInput === 'confirm' && [styles.inputFocused, { borderColor: theme.primary, backgroundColor: theme.primaryLight }]
-          ]}
-          placeholder="Confirm new password"
-          placeholderTextColor={theme.textSecondary}
-          secureTextEntry
-          value={confirm}
-          onChangeText={setConfirm}
-          onFocus={() => setFocusedInput('confirm')}
-          onBlur={() => setFocusedInput('')}
-        />
-        <TouchableOpacity style={[styles.button, { backgroundColor: theme.primary, shadowColor: theme.shadow }]} onPress={handleSubmit} activeOpacity={0.85} disabled={loading}>
-          <Text style={[styles.buttonText, { color: theme.textInverse }]}>{loading ? 'Changing...' : 'Change Password'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={[styles.backBtnText, { color: theme.primary }]}>Back</Text>
-        </TouchableOpacity>
-      </Animated.View>
-      <SimplePrompt
+    <LinearGradient colors={DEEP_BLUE_GRADIENT} style={{ flex: 1 }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+        <BlurView intensity={90} tint="dark" style={{ backgroundColor: GLASS_BG_DEEP, borderRadius: 28, borderWidth: 1.5, borderColor: GLASS_BORDER, padding: 32, alignItems: 'center', width: '100%', maxWidth: 380, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 12 }}>
+          <Feather name="lock" size={48} color={BLUE_ACCENT} style={{ marginBottom: 18 }} />
+          <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 24, color: WHITE, marginBottom: 12, textAlign: 'center' }}>Change Password</Text>
+          <TextInput
+            style={{ width: '100%', borderRadius: 12, padding: 14, fontSize: 16, marginBottom: 16, borderWidth: 1.5, fontWeight: '500', height: 52, backgroundColor: 'rgba(255,255,255,0.08)', color: WHITE, borderColor: GLASS_BORDER, fontFamily: 'Inter_400Regular' }}
+            placeholder="Current password"
+            placeholderTextColor={WHITE + '99'}
+            secureTextEntry
+            value={current}
+            onChangeText={setCurrent}
+          />
+          <TextInput
+            style={{ width: '100%', borderRadius: 12, padding: 14, fontSize: 16, marginBottom: 16, borderWidth: 1.5, fontWeight: '500', height: 52, backgroundColor: 'rgba(255,255,255,0.08)', color: WHITE, borderColor: GLASS_BORDER, fontFamily: 'Inter_400Regular' }}
+            placeholder="New password"
+            placeholderTextColor={WHITE + '99'}
+            secureTextEntry
+            value={next}
+            onChangeText={setNext}
+          />
+          <TextInput
+            style={{ width: '100%', borderRadius: 12, padding: 14, fontSize: 16, marginBottom: 16, borderWidth: 1.5, fontWeight: '500', height: 52, backgroundColor: 'rgba(255,255,255,0.08)', color: WHITE, borderColor: GLASS_BORDER, fontFamily: 'Inter_400Regular' }}
+            placeholder="Confirm new password"
+            placeholderTextColor={WHITE + '99'}
+            secureTextEntry
+            value={confirm}
+            onChangeText={setConfirm}
+          />
+          <TouchableOpacity style={{ backgroundColor: BLUE_ACCENT, borderRadius: 18, paddingVertical: 16, paddingHorizontal: 32, marginBottom: 12, width: '100%', alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.10, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 }} onPress={handleSubmit} activeOpacity={0.85} disabled={loading}>
+            <Text style={{ color: WHITE, fontFamily: 'Inter_700Bold', fontSize: 18, textAlign: 'center' }}>{loading ? 'Changing...' : 'Change Password'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={{ backgroundColor: 'rgba(41,121,255,0.08)', borderRadius: 18, paddingVertical: 14, paddingHorizontal: 32, alignItems: 'center', justifyContent: 'center', width: '100%' }} onPress={() => navigation.goBack()} activeOpacity={0.85}>
+            <Text style={{ color: BLUE_ACCENT, fontFamily: 'Inter_700Bold', fontSize: 16, textAlign: 'center' }}>Back</Text>
+          </TouchableOpacity>
+        </BlurView>
+      </View>
+      {/* Glassy confirmation modal */}
+      <Modal
         visible={promptVisible}
-        message={promptMessage}
-        onClose={() => setPromptVisible(false)}
-      />
-    </SafeAreaView>
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPromptVisible(false)}
+      >
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <BlurView intensity={120} tint="dark" style={{ ...StyleSheet.absoluteFillObject, zIndex: 1 }}>
+            <View style={{ flex: 1, backgroundColor: 'rgba(10,10,20,0.55)' }} />
+          </BlurView>
+          <BlurView intensity={90} tint="dark" style={{ backgroundColor: GLASS_BG_DEEP, borderRadius: 24, padding: 32, alignItems: 'center', width: 320, borderWidth: 1.5, borderColor: GLASS_BORDER, zIndex: 2, shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 16 }}>
+            <Feather name={promptMessage.includes('success') ? 'check-circle' : 'alert-circle'} size={48} color={promptMessage.includes('success') ? BLUE_ACCENT : 'crimson'} style={{ marginBottom: 18 }} />
+            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 18, color: WHITE, marginBottom: 18, textAlign: 'center' }}>{promptMessage}</Text>
+            <TouchableOpacity style={{ backgroundColor: BLUE_ACCENT, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 38, alignItems: 'center', marginTop: 4, width: '100%' }} onPress={() => setPromptVisible(false)} activeOpacity={0.85}>
+              <Text style={{ color: WHITE, fontFamily: 'Inter_700Bold', fontSize: 16 }}>OK</Text>
+            </TouchableOpacity>
+          </BlurView>
+        </View>
+      </Modal>
+    </LinearGradient>
   );
 }
 

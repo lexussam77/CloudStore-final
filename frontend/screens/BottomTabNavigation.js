@@ -7,6 +7,7 @@ import AccountScreen from './AccountScreen';
 import CompressionScreen from './CompressionScreen';
 import Feather from 'react-native-vector-icons/Feather';
 import { useTheme } from '../theme/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const TABS = [
   { key: 'Home', label: 'Home', icon: 'home' },
@@ -15,6 +16,8 @@ const TABS = [
   { key: 'Photos', label: 'Photos', icon: 'image' },
   { key: 'Account', label: 'Account', icon: 'user' },
 ];
+
+const NAV_GRADIENT = ['#0a0f1c', '#12203a', '#1a2a4f'];
 
 export default function BottomTabNavigation({ navigation }) {
   const { theme } = useTheme();
@@ -71,7 +74,7 @@ export default function BottomTabNavigation({ navigation }) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Main Screen Content */}
-      <View style={styles.content}>
+      <View style={[styles.content, { pointerEvents: 'box-none' }]}>
         {/* Top Bar with Title - Hide for Home tab */}
         {activeTab !== 'Home' && (
           <View style={[styles.topBar, { borderBottomColor: theme.border }]}>
@@ -81,61 +84,32 @@ export default function BottomTabNavigation({ navigation }) {
         <ScreenComponent />
       </View>
       {/* Bottom Tab Bar */}
-      <View style={styles.tabBarWrap}>
-        <View style={[styles.tabBar, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          {TABS.map((tab, idx) => {
-            const isCompression = tab.key === 'Compression';
+      <View style={styles.tabBarContainer}>
+        <LinearGradient
+          colors={NAV_GRADIENT}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.tabBarGradient}
+        >
+          {TABS.map((tab) => {
             const isActive = activeTab === tab.key;
-            const animStyle = {
-              transform: [
-                { translateY: tabAnim[tab.key].interpolate({ inputRange: [0, 1], outputRange: [0, isCompression ? -24 : -10] }) },
-                { scale: tabAnim[tab.key].interpolate({ inputRange: [0, 1], outputRange: [1, isCompression ? 1.18 : 1.12] }) },
-              ],
-            };
             return (
               <TouchableOpacity
                 key={tab.key}
-                style={isCompression ? [styles.tabButton, styles.compressionTabButton] : styles.tabButton}
-                onPress={() => handleTabPress(tab)}
-                onPressIn={() => handleTabPressIn(tab)}
-                onPressOut={() => handleTabPressOut(tab)}
-                activeOpacity={0.85}
+                style={styles.tabButton}
+                onPress={() => setActiveTab(tab.key)}
+                activeOpacity={0.8}
               >
-                <Animated.View style={isCompression ? [animStyle, styles.compressionIconShadow] : animStyle}>
-                  {isCompression ? (
-                    <View style={[
-                      styles.compressionIconWrap,
-                      isActive && styles.compressionIconWrapActive,
-                    ]}>
-                      <Feather
-                        name={tab.icon}
-                        size={36}
-                        color={'#000'}
-                        style={styles.compressionIcon}
-                      />
-                    </View>
-                  ) : (
-                    <Feather
-                      name={tab.icon}
-                      size={24}
-                      color={isActive ? theme.primary : '#fff'}
-                      style={isActive ? styles.activeTabIcon : styles.tabIcon}
-                    />
-                  )}
-                </Animated.View>
-                <Text style={[
-                  styles.tabLabel,
-                  isCompression
-                    ? { color: isActive ? '#000' : '#fff' }
-                    : { color: isActive ? theme.primary : '#fff' },
-                  isCompression && styles.compressionTabLabel
-                ]} numberOfLines={1} adjustsFontSizeToFit>
-                  {isCompression ? 'Compress' : tab.label}
-                </Text>
+                <Feather
+                  name={tab.icon}
+                  size={isActive ? 30 : 26}
+                  color={isActive ? '#2979FF' : '#fff'}
+                  style={isActive ? styles.activeIcon : styles.inactiveIcon}
+                />
               </TouchableOpacity>
             );
           })}
-        </View>
+        </LinearGradient>
       </View>
     </SafeAreaView>
   );
@@ -163,87 +137,41 @@ const styles = StyleSheet.create({
 
   content: {
     flex: 1,
+    // pointerEvents: 'box-none', // uncomment if touch issues occur
   },
-  tabBarWrap: {
-    backgroundColor: 'transparent',
-    position: 'relative',
-    height: 80,
+  tabBarContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 70,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: -2 },
+    elevation: 20, // increased for overlay
+    zIndex: 100, // ensure always on top
   },
-  tabBar: {
+  tabBarGradient: {
+    flex: 1,
     flexDirection: 'row',
-    height: 64,
-    borderTopWidth: 1,
-    paddingBottom: 4,
-    paddingTop: 4,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    shadowOpacity: 0.1,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: -6 },
-    elevation: 3,
+    justifyContent: 'space-around',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    overflow: 'hidden',
   },
   tabButton: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
+    paddingVertical: 10,
   },
-  tabIcon: {
-    marginBottom: 2,
+  activeIcon: {
+    // Optionally add a glow or shadow for the active icon
+    textShadowColor: '#2979FF44',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
-  activeTabIcon: {
-    marginBottom: 2,
-  },
-  tabLabel: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    fontFamily: 'System',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  activeTabLabel: {
-    // Color will be applied dynamically
-  },
-  compressionTabLabel: {
-    fontWeight: '600',
-    fontSize: 12,
-    marginTop: 2,
-    textAlign: 'center',
-    maxWidth: 48,
-    color: '#222',
-  },
-  compressionTabButton: {
-    zIndex: 2,
-    marginTop: -18,
-  },
-  compressionIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#fff', // revert to white background
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2, // revert to thicker border
-    borderColor: '#000', // revert to black border
-    shadowColor: '#222',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 6,
-  },
-  compressionIconWrapActive: {
-    backgroundColor: '#f0f0f0', // revert to light gray when active
-    borderColor: '#000', // black border when active
-  },
-  compressionIcon: {
-    width: 36,
-    height: 36,
-  },
-  compressionIconShadow: {
-    shadowColor: '#222', // dark shadow
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 10,
-  },
+  inactiveIcon: {},
 });
