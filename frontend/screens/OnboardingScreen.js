@@ -2,7 +2,13 @@ import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity, SafeAreaView } from 'react-native';
 import MyFilesSVG from '../assets/images/undraw_my-files_1xwx.svg';
 import UploadSVG from '../assets/images/undraw_upload_cucu.svg';
+import UserAccountSVG from '../assets/images/undraw_user-account_fvqa.svg';
+import FeedbackSVG from '../assets/images/undraw_feedback_ebmx.svg';
+import TermsSVG from '../assets/images/undraw_terms_sx63.svg';
 import { useTheme } from '../theme/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import { useFonts, Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
 
 const { width } = Dimensions.get('window');
 
@@ -23,14 +29,20 @@ const slides = [
     key: 'slide3',
     title: 'Stay Organized',
     description: 'Create folders, favorite files, and keep everything organized in the cloud.',
-    Illustration: MyFilesSVG,
+    Illustration: TermsSVG,
   },
 ];
+
+const DEEP_BLUE_GRADIENT = ['#0a0f1c', '#12203a', '#1a2a4f'];
+const GLASS_BG_DEEP = 'rgba(20,40,80,0.32)';
+const GLASS_BORDER = 'rgba(255,255,255,0.10)';
 
 export default function OnboardingScreen({ navigation }) {
   const { theme } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef();
+  let [fontsLoaded] = useFonts({ Inter_400Regular, Inter_700Bold });
+  if (!fontsLoaded) return null;
 
   const handleScroll = (event) => {
     const index = Math.round(event.nativeEvent.contentOffset.x / width);
@@ -46,36 +58,40 @@ export default function OnboardingScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <FlatList
-        ref={flatListRef}
-        data={slides}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        keyExtractor={item => item.key}
-        renderItem={({ item }) => (
-          <View style={styles.slide}>
-            <item.Illustration width={220} height={180} style={styles.illustration} />
-            <Text style={[styles.title, { color: theme.primary }]}>{item.title}</Text>
-            <Text style={[styles.description, { color: theme.textSecondary }]}>{item.description}</Text>
-          </View>
-        )}
-      />
-      <View style={styles.dotsRow}>
-        {slides.map((_, idx) => (
-          <View
-            key={idx}
-            style={[styles.dot, { backgroundColor: theme.border }, currentIndex === idx && { backgroundColor: theme.primary, width: 18 }]}
-          />
-        ))}
-      </View>
-      <TouchableOpacity style={[styles.nextBtn, { backgroundColor: theme.primary }]} onPress={handleNext}>
-        <Text style={[styles.nextBtnText, { color: theme.textInverse }]}>{currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+    <LinearGradient colors={DEEP_BLUE_GRADIENT} style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <FlatList
+          ref={flatListRef}
+          data={slides}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          keyExtractor={item => item.key}
+          renderItem={({ item }) => (
+            <View style={{ width, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+              <BlurView intensity={90} tint="dark" style={{ backgroundColor: GLASS_BG_DEEP, borderRadius: 32, borderWidth: 1.5, borderColor: GLASS_BORDER, padding: 32, alignItems: 'center', width: '100%', maxWidth: 340, marginBottom: 32, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 12 }}>
+                <item.Illustration width={140} height={140} style={{ borderRadius: 24, marginBottom: 18 }} />
+              </BlurView>
+              <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 30, color: '#fff', marginBottom: 14, textAlign: 'center', letterSpacing: 0.5 }}>{item.title}</Text>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 17, color: '#fff', marginBottom: 36, textAlign: 'center', lineHeight: 24 }}>{item.description}</Text>
+            </View>
+          )}
+        />
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 24, marginTop: 8 }}>
+          {slides.map((_, idx) => (
+            <View
+              key={idx}
+              style={{ width: currentIndex === idx ? 18 : 10, height: 10, borderRadius: 5, marginHorizontal: 6, backgroundColor: currentIndex === idx ? theme.primary : theme.border }}
+            />
+          ))}
+        </View>
+        <TouchableOpacity style={{ backgroundColor: theme.primary, borderRadius: 999, paddingVertical: 18, alignItems: 'center', width: '80%', shadowColor: theme.primary, shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 2, alignSelf: 'center', marginBottom: 32 }} onPress={handleNext}>
+          <Text style={{ color: theme.textInverse, fontFamily: 'Inter_700Bold', fontSize: 19, letterSpacing: 0.5, textAlign: 'center' }}>{currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
