@@ -4,6 +4,16 @@ import { useNavigation } from '@react-navigation/native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useTheme } from '../theme/ThemeContext';
 import { usePremium } from './PremiumContext';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import { useFonts, Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
+import { Text as RNText, TextInput as RNTextInput } from 'react-native';
+
+// Set Inter font as default for all Text and TextInput
+RNText.defaultProps = RNText.defaultProps || {};
+RNText.defaultProps.style = [{ fontFamily: 'Inter_400Regular' }];
+RNTextInput.defaultProps = RNTextInput.defaultProps || {};
+RNTextInput.defaultProps.style = [{ fontFamily: 'Inter_400Regular' }];
 
 const plans = [
   {
@@ -43,6 +53,10 @@ const plans = [
 
 const { width } = Dimensions.get('window');
 
+const DEEP_BLUE_GRADIENT = ['#0a0f1c', '#12203a', '#1a2a4f'];
+const GLASS_BG_DEEP = 'rgba(20,40,80,0.32)';
+const GLASS_BORDER = 'rgba(255,255,255,0.10)';
+
 export default function ManagePlanScreen() {
   const { theme } = useTheme();
   const [selectedTab, setSelectedTab] = useState(0);
@@ -57,6 +71,12 @@ export default function ManagePlanScreen() {
   const [phone, setPhone] = useState('');
   const [processing, setProcessing] = useState(false);
 
+  // Add state for two-step modal
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showMobileModal, setShowMobileModal] = useState(false);
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [mobileError, setMobileError] = useState('');
+
   const handleTabPress = (idx) => {
     setSelectedTab(idx);
     flatListRef.current.scrollToIndex({ index: idx });
@@ -69,9 +89,32 @@ export default function ManagePlanScreen() {
 
   const handleTryPlan = (plan) => {
     setSelectedPlan(plan);
-    setShowModal(true);
+    setShowConfirmModal(true);
     setNetwork('MTN');
     setPhone('');
+  };
+
+  // New: handleContinueToMobile
+  const handleContinueToMobile = () => {
+    setShowConfirmModal(false);
+    setShowMobileModal(true);
+  };
+
+  // New: handleMobilePay
+  const handleMobilePay = async () => {
+    if (!mobileNumber.match(/^0\d{9}$/)) {
+      setMobileError('Enter a valid 10-digit Ghana number (e.g. 0551234567)');
+      return;
+    }
+    setMobileError('');
+    setProcessing(true);
+    setTimeout(async () => {
+      await upgradeToPremium(selectedPlan, network, mobileNumber);
+      setProcessing(false);
+      setShowMobileModal(false);
+      setMobileNumber('');
+      Alert.alert('Success', 'You are now a premium user!');
+    }, 1500);
   };
 
   const handleSimulatePayment = async () => {
@@ -88,92 +131,111 @@ export default function ManagePlanScreen() {
     }, 1500);
   };
 
+  let [fontsLoaded] = useFonts({ Inter_400Regular, Inter_700Bold });
+  if (!fontsLoaded) return null;
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Header removed as requested */}
-      <Text style={[styles.pageTitle, { color: theme.primary }]}>Choose Your CloudStore Plan</Text>
-      <View style={styles.tabsRow}>
-        {plans.map((plan, idx) => (
-          <TouchableOpacity
-            key={plan.key}
-            style={[styles.tab, { borderBottomColor: 'transparent' }, selectedTab === idx && [styles.tabSelected, { borderBottomColor: theme.primary }]]}
-            onPress={() => handleTabPress(idx)}
-          >
-            <Text style={[styles.tabText, { color: theme.textSecondary }, selectedTab === idx && [styles.tabTextSelected, { color: theme.primary }]]}>{plan.name}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      <FlatList
-        ref={flatListRef}
-        data={plans}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        keyExtractor={item => item.key}
-        contentContainerStyle={styles.cardsScroll}
-        renderItem={({ item }) => (
-          <Animated.View entering={FadeIn.duration(400)} style={[styles.card, { backgroundColor: theme.card, shadowColor: theme.shadow, width: width * 0.85 }]}> 
-            <Text style={[styles.planName, { color: theme.text }]}>{item.name}</Text>
-            <Text style={[styles.planPrice, { color: theme.text }]}>{item.storage}, {item.price}</Text>
-            <View style={styles.featuresList}>
-              {item.features.map((f, idx) => (
-                <View key={idx} style={styles.featureRow}>
-                  <Text style={[styles.check, { color: '#009900' }]}>✔</Text>
-                  <Text style={[styles.featureText, { color: theme.text }]}>{f}</Text>
-                </View>
-              ))}
-            </View>
-            <TouchableOpacity style={styles.reminderRow}>
-              <Text style={[styles.bell, { color: theme.primary }]}>🔔</Text>
-              <Text style={[styles.reminderText, { color: theme.primary }]}>Get a reminder before your trial ends</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.ctaButton, { backgroundColor: theme.primary, shadowColor: theme.shadow }]} onPress={() => handleTryPlan(item)}>
-              <Text style={[styles.ctaButtonText, { color: theme.textInverse }]}>Try free for 30 days</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        )}
-      />
-      {/* Simulated Payment Modal */}
-      <Modal visible={showModal} transparent animationType="slide">
-        <View style={{ flex:1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent:'center', alignItems:'center' }}>
-          <View style={{ backgroundColor: theme.card, padding: 28, borderRadius: 22, width: 340, alignItems:'center', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 16, elevation: 8 }}>
-            <View style={{ alignItems: 'center', marginBottom: 10 }}>
-              <Text style={{ fontSize: 32, marginBottom: 2 }}>💳</Text>
-              <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.primary, marginBottom: 2 }}>Payment</Text>
-            </View>
-            <Text style={{ marginBottom: 8, color: theme.text, fontWeight: 'bold', fontSize: 15 }}>Select Mobile Money Network:</Text>
-            <View style={{ flexDirection: 'row', marginBottom: 16 }}>
-              {['MTN', 'Telecel'].map(nw => (
-                <TouchableOpacity key={nw} style={{ marginHorizontal: 10, paddingVertical: 10, paddingHorizontal: 18, borderRadius: 12, backgroundColor: network === nw ? theme.primary : theme.input, flexDirection: 'row', alignItems: 'center', borderWidth: network === nw ? 2 : 1, borderColor: network === nw ? theme.primary : theme.border }} onPress={() => setNetwork(nw)}>
-                  <Text style={{ fontSize: 18, marginRight: 6 }}>{nw === 'MTN' ? '📱' : '📶'}</Text>
-                  <Text style={{ color: network === nw ? theme.textInverse : theme.text, fontWeight: 'bold' }}>{nw}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <TextInput
-              style={{ width: '100%', borderWidth: 1.5, borderColor: theme.primary, borderRadius: 10, padding: 14, marginBottom: 18, color: theme.text, backgroundColor: theme.input, fontSize: 16, fontWeight: '500', letterSpacing: 1 }}
-              placeholder="Phone Number (e.g. 0551234567)"
-              placeholderTextColor={theme.textSecondary}
-              keyboardType="number-pad"
-              value={phone}
-              onChangeText={setPhone}
-              maxLength={10}
-            />
-            <TouchableOpacity style={{ backgroundColor: theme.primary, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 40, marginBottom: 10, width: '100%', alignItems:'center', shadowColor: theme.shadow, shadowOpacity: 0.12, shadowRadius: 8, elevation: 2 }} onPress={handleSimulatePayment} disabled={processing}>
-              {processing ? <ActivityIndicator color={theme.textInverse} /> : <Text style={{ color: theme.textInverse, fontWeight: 'bold', fontSize: 16, letterSpacing: 0.5 }}>Pay Now</Text>}
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowModal(false)} disabled={processing}>
-              <Text style={{ color: theme.primary, marginTop: 8, fontWeight: 'bold', fontSize: 15 }}>Cancel</Text>
-            </TouchableOpacity>
+    <LinearGradient colors={DEEP_BLUE_GRADIENT} style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }}>
+        <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 24, color: theme.primary, textAlign: 'center', marginBottom: 10, marginTop: 32, letterSpacing: 0.2 }}>Choose Your CloudStore Plan</Text>
+        <BlurView intensity={70} tint="dark" style={{ borderRadius: 18, marginHorizontal: 18, marginBottom: 12, marginTop: 8, overflow: 'hidden' }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+            {plans.map((plan, idx) => (
+              <TouchableOpacity
+                key={plan.key}
+                style={{ flex: 1, paddingVertical: 10, borderBottomWidth: 3, borderBottomColor: selectedTab === idx ? theme.primary : 'transparent', alignItems: 'center', borderRadius: 0 }}
+                onPress={() => handleTabPress(idx)}
+              >
+                <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 16, color: selectedTab === idx ? theme.primary : theme.textSecondary }}>{plan.name}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
-        </View>
-      </Modal>
-      <TouchableOpacity style={[styles.freePlanButton, { backgroundColor: theme.secondary, borderColor: theme.border }]} onPress={() => navigation.goBack()}>
-        <Text style={[styles.freePlanText, { color: theme.primary }]}>Continue with Free Plan</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+        </BlurView>
+        <FlatList
+          ref={flatListRef}
+          data={plans}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          keyExtractor={item => item.key}
+          contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 24, minHeight: 300, paddingHorizontal: (width * 0.075) }}
+          snapToInterval={width * 0.85 + 20}
+          decelerationRate="fast"
+          renderItem={({ item }) => (
+            <BlurView intensity={90} tint="dark" style={{ backgroundColor: GLASS_BG_DEEP, borderRadius: 28, borderWidth: 1.5, borderColor: theme.primary, marginHorizontal: 10, padding: 28, shadowColor: theme.shadow, shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 8, alignItems: 'center', justifyContent: 'center', marginBottom: 10, width: width * 0.85 }}>
+              <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 22, color: theme.text, marginBottom: 4 }}>{item.name}</Text>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, color: theme.text, marginBottom: 14 }}>{item.storage}, {item.price}</Text>
+              <View style={{ marginBottom: 14, width: '100%' }}>
+                {item.features.map((f, idx) => (
+                  <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <Text style={{ fontSize: 16, marginRight: 8, color: theme.primary }}>✔</Text>
+                    <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: theme.text }}>{f}</Text>
+                  </View>
+                ))}
+              </View>
+              <TouchableOpacity style={{ borderRadius: 16, paddingVertical: 14, paddingHorizontal: 32, marginTop: 10, alignItems: 'center', width: '100%', backgroundColor: theme.primary, shadowColor: theme.shadow, shadowOpacity: 0.10, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 }} onPress={() => handleTryPlan(item)}>
+                <Text style={{ fontFamily: 'Inter_700Bold', color: theme.textInverse, fontSize: 16, textAlign: 'center', letterSpacing: 0.1 }}>Try free for 30 days</Text>
+              </TouchableOpacity>
+            </BlurView>
+          )}
+        />
+        {/* Simulated Payment Modal */}
+        <Modal visible={showConfirmModal} transparent animationType="fade">
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,10,20,0.55)', zIndex: 1 }} />
+            <View style={{ backgroundColor: theme.card, borderRadius: 18, padding: 28, maxWidth: '90%', marginHorizontal: 16, alignItems:'center', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 12, elevation: 8, zIndex: 2 }}>
+              <View style={{ alignItems: 'center', marginBottom: 10 }}>
+                <Text style={{ fontSize: 32, marginBottom: 2 }}>🎁</Text>
+                <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 22, color: theme.primary, marginBottom: 2 }}>Try Free for 30 Days</Text>
+              </View>
+              <Text style={{ marginBottom: 8, color: theme.text, fontFamily: 'Inter_400Regular', fontSize: 15, textAlign: 'center' }}>Enjoy all premium features for 30 days. No charge until your trial ends. You can cancel anytime.</Text>
+              <TouchableOpacity style={{ backgroundColor: theme.primary, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 40, marginBottom: 10, width: '100%', alignItems:'center', shadowColor: theme.shadow, shadowOpacity: 0.10, shadowRadius: 8, elevation: 2 }} onPress={handleContinueToMobile}>
+                <Text style={{ fontFamily: 'Inter_700Bold', color: theme.textInverse, fontSize: 16, letterSpacing: 0.5 }}>Continue</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowConfirmModal(false)}>
+                <Text style={{ color: theme.primary, marginTop: 8, fontFamily: 'Inter_700Bold', fontSize: 15 }}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        {/* Add the Mobile Money Number modal */}
+        <Modal visible={showMobileModal} transparent animationType="fade">
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,10,20,0.55)', zIndex: 1 }} />
+            <View style={{ backgroundColor: theme.card, borderRadius: 18, padding: 28, maxWidth: '90%', marginHorizontal: 16, alignItems:'center', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 12, elevation: 8, zIndex: 2 }}>
+              <View style={{ alignItems: 'center', marginBottom: 10 }}>
+                <Text style={{ fontSize: 32, marginBottom: 2 }}>💳</Text>
+                <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 22, color: theme.primary, marginBottom: 2 }}>Mobile Money Number</Text>
+              </View>
+              <Text style={{ marginBottom: 8, color: theme.text, fontFamily: 'Inter_400Regular', fontSize: 15, textAlign: 'center' }}>Enter your Ghana mobile money number to start your free trial.</Text>
+              <TextInput
+                style={{ width: '100%', borderWidth: 1.5, borderColor: theme.primary, borderRadius: 10, padding: 14, marginBottom: 8, color: theme.text, backgroundColor: theme.input, fontSize: 16, fontFamily: 'Inter_400Regular', letterSpacing: 1 }}
+                placeholder="0551234567"
+                placeholderTextColor={theme.textSecondary}
+                keyboardType="number-pad"
+                value={mobileNumber}
+                onChangeText={setMobileNumber}
+                maxLength={10}
+              />
+              {mobileError ? <Text style={{ color: 'crimson', fontFamily: 'Inter_700Bold', marginBottom: 8 }}>{mobileError}</Text> : null}
+              <TouchableOpacity style={{ backgroundColor: theme.primary, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 40, marginBottom: 10, width: '100%', alignItems:'center', shadowColor: theme.shadow, shadowOpacity: 0.10, shadowRadius: 8, elevation: 2 }} onPress={handleMobilePay} disabled={processing}>
+                {processing ? <ActivityIndicator color={theme.textInverse} /> : <Text style={{ fontFamily: 'Inter_700Bold', color: theme.textInverse, fontSize: 16, letterSpacing: 0.5 }}>Pay Now</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { setShowMobileModal(false); setMobileNumber(''); setMobileError(''); }} disabled={processing}>
+                <Text style={{ color: theme.primary, marginTop: 8, fontFamily: 'Inter_700Bold', fontSize: 15 }}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        <BlurView intensity={60} tint="dark" style={{ borderRadius: 14, marginHorizontal: 32, marginTop: 10, marginBottom: 18, overflow: 'hidden' }}>
+          <TouchableOpacity style={{ paddingVertical: 14, alignItems: 'center', width: '100%' }} onPress={() => navigation.goBack()}>
+            <Text style={{ fontFamily: 'Inter_700Bold', color: theme.primary, fontSize: 16 }}>Continue with Free Plan</Text>
+          </TouchableOpacity>
+        </BlurView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
